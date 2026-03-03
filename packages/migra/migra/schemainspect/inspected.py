@@ -163,7 +163,7 @@ class ColumnInfo(AutoRepr):
     def change_enum_statement(self, table_name):
         if self.is_enum:
             assert self.enum is not None
-            return f"alter table {table_name} alter column {self.name} type {self.enum.quoted_full_name} using {self.name}::text::{self.enum.quoted_full_name};"
+            return f"alter table {table_name} alter column {self.quoted_name} type {self.enum.quoted_full_name} using {self.quoted_name}::text::{self.enum.quoted_full_name};"
         else:
             raise ValueError
 

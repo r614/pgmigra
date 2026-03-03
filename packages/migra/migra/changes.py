@@ -18,6 +18,7 @@ from .util import differences
 THINGS = [
     "schemas",
     "enums",
+    "domains",
     "sequences",
     "constraints",
     "functions",

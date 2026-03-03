@@ -974,7 +974,7 @@ to {roleslist}{qual_clause}{withcheck_clause};
         return all(equalities)
 
 
-PROPS = "schemas relations tables views functions selectables sequences constraints indexes enums extensions privileges collations triggers rlspolicies"
+PROPS = "schemas relations tables views functions selectables sequences constraints indexes enums extensions privileges collations triggers rlspolicies domains"
 
 
 class PostgreSQL(DBInspector):
@@ -1645,4 +1645,5 @@ class PostgreSQL(DBInspector):
             and self.triggers == other.triggers
             and self.collations == other.collations
             and self.rlspolicies == other.rlspolicies
+            and self.domains == other.domains
         )

@@ -86,7 +86,7 @@ class Migration:
         if drops:
             self.add(self.changes.extensions(drops_only=True))
 
-    def add_all_changes(self, privileges: bool = False) -> None:
+    def add_all_changes(self, privileges: bool = False, concurrent_indexes: bool = False) -> None:
         self.add(self.changes.schemas(creations_only=True))
 
         self.add(self.changes.extensions(creations_only=True, modifications=False))
@@ -128,6 +128,15 @@ class Migration:
         self.add(self.changes.comments(creations_only=True))
         self.add(self.changes.collations(drops_only=True))
         self.add(self.changes.schemas(drops_only=True))
+
+        if concurrent_indexes:
+            new_stmts = Statements()
+            for s in self.statements:
+                if s.lstrip().lower().startswith("create index") and "concurrently" not in s.lower():
+                    s = s.replace("create index ", "create index concurrently ", 1)
+                new_stmts.append(s)
+            new_stmts.safe = self.statements.safe
+            self.statements = new_stmts
 
     @property
     def sql(self) -> str:

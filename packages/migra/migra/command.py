@@ -66,6 +66,13 @@ def parse_args(args: list[str]) -> argparse.Namespace:
         help="Also output privilege differences (ie. grant/revoke statements)",
     )
     parser.add_argument(
+        "--concurrent-indexes",
+        dest="concurrent_indexes",
+        action="store_true",
+        default=False,
+        help="Use CREATE INDEX CONCURRENTLY for index creation (cannot run inside a transaction)",
+    )
+    parser.add_argument(
         "--force-utf8",
         dest="force_utf8",
         action="store_true",
@@ -103,7 +110,7 @@ def run(
         if args.create_extensions_only:
             m.add_extension_changes(drops=False)
         else:
-            m.add_all_changes(privileges=args.with_privileges)
+            m.add_all_changes(privileges=args.with_privileges, concurrent_indexes=args.concurrent_indexes)
         try:
             if m.statements:
                 if args.force_utf8:

@@ -1,5 +1,5 @@
 from migra.db import connect
-from schemainspect import get_inspector
+from migra.schemainspect import get_inspector
 
 from .test_all import setup_pg_schema
 

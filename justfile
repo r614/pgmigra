@@ -3,23 +3,15 @@ default:
 
 # Install all dependencies
 install:
-    uv sync --all-packages
+    uv sync
 
 # Run all tests
 test:
-    uv run pytest packages/schemainspect/tests packages/migra/tests -x -svv --tb=short
-
-# Run migra tests only
-test-migra:
     uv run pytest packages/migra/tests -x -svv --tb=short
-
-# Run schemainspect tests only
-test-schemainspect:
-    uv run pytest packages/schemainspect/tests -x -svv --tb=short
 
 # Run tests with coverage
 test-cov:
-    uv run pytest packages/schemainspect/tests packages/migra/tests -x --cov=packages/migra/migra --cov=packages/schemainspect/schemainspect --cov-report=term-missing
+    uv run pytest packages/migra/tests -x --cov=packages/migra/migra --cov-report=term-missing
 
 # Lint
 lint:
@@ -55,7 +47,7 @@ test-pg version="16":
         docker exec "$CONTAINER" psql -U postgres -c "CREATE ROLE schemainspect_test_role" 2>/dev/null || true
     fi
     PGHOST=localhost PGPORT=$PORT PGUSER=postgres \
-        uv run pytest packages/schemainspect/tests packages/migra/tests -x -svv --tb=short
+        uv run pytest packages/migra/tests -x -svv --tb=short
 
 # Run tests against all supported PG versions
 test-pg-all:

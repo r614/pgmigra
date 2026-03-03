@@ -1,8 +1,18 @@
-from .inspector import NullInspector
+from __future__ import annotations
+
+from typing import Any
+
+import psycopg
+
+from .inspector import DBInspector, NullInspector
 from .pg import PostgreSQL
 
 
-def get_inspector(x, schema=None, exclude_schema=None):
+def get_inspector(
+    x: psycopg.Connection[Any] | None,
+    schema: str | None = None,
+    exclude_schema: str | None = None,
+) -> DBInspector:
     if schema and exclude_schema:
         raise ValueError("Cannot provide both schema and exclude_schema")
     if x is None:

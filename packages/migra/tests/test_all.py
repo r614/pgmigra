@@ -2,13 +2,13 @@ import datetime
 from copy import deepcopy
 
 import pytest
-import schemainspect
+from migra import schemainspect
 from migra.db import connect
 from pytest import raises
-from schemainspect import NullInspector, get_inspector, to_pytype
-from schemainspect.inspected import ColumnInfo
-from schemainspect.misc import quoted_identifier
-from schemainspect.pg.obj import (
+from migra.schemainspect import NullInspector, get_inspector, to_pytype
+from migra.schemainspect.inspected import ColumnInfo
+from migra.schemainspect.misc import quoted_identifier
+from migra.schemainspect.pg.obj import (
     InspectedConstraint,
     InspectedEnum,
     InspectedExtension,

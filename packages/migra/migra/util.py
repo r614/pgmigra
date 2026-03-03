@@ -8,7 +8,6 @@ V = TypeVar("V")
 def differences(
     a: dict[str, V],
     b: dict[str, V],
-    add_dependencies_for_modifications: bool = True,
 ) -> tuple[dict[str, V], dict[str, V], dict[str, V], dict[str, V]]:
     a_keys = set(a.keys())
     b_keys = set(b.keys())

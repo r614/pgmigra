@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import datetime
 import decimal
 import uuid
+from typing import Any
 
-PG_TYPE_MAP = {
+PG_TYPE_MAP: dict[str, type[Any]] = {
     # numeric
     "bigint": int,
     "integer": int,
@@ -85,12 +88,12 @@ class PGDialect:
     name = "postgresql"
 
 
-def to_pytype(dialect, typename):
+def to_pytype(dialect: PGDialect, typename: str) -> type[Any]:
     return PG_TYPE_MAP.get(typename, type(None))
 
 
 class DBInspector:
-    def __init__(self, c, include_internal=False):
+    def __init__(self, c: Any, include_internal: bool = False) -> None:
         self.c = c
         self.dialect = PGDialect()
         self.include_internal = include_internal
@@ -98,13 +101,13 @@ class DBInspector:
 
     def load_all(self) -> None: ...
 
-    def to_pytype(self, typename):
+    def to_pytype(self, typename: str) -> type[Any]:
         return to_pytype(self.dialect, typename)
 
 
 class NullInspector(DBInspector):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> dict[str, Any]:
         return {}

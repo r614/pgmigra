@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 import argparse
 import sys
 from io import StringIO
+from typing import Any
 
 import psycopg
+import yaml
 from psycopg.rows import namedtuple_row
 
 from .get import get_inspector
@@ -10,7 +14,7 @@ from .misc import quoted_identifier
 from .tableformat import t
 
 
-def parse_args(args):
+def parse_args(args: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Inspect a schema")
 
     subparsers = parser.add_subparsers(help="sub-command help", dest="command")
@@ -26,12 +30,12 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-def do_deps(db_url):
+def do_deps(db_url: str) -> None:
     with psycopg.connect(db_url, row_factory=namedtuple_row, autocommit=True) as s:
         i = get_inspector(s)
         deps = i.deps
 
-    def process_row(dep):
+    def process_row(dep: Any) -> dict[str, str]:
         depends_on = quoted_identifier(dep.name, dep.schema, dep.identity_arguments)
         thing = quoted_identifier(
             dep.name_dependent_on,
@@ -44,9 +48,9 @@ def do_deps(db_url):
             depends_on=f"{dep.kind}: {depends_on}",
         )
 
-    deps = [process_row(_) for _ in deps]
+    processed = [process_row(_) for _ in deps]
 
-    rows = t(deps)
+    rows = t(processed)
 
     if rows:
         print(rows)
@@ -54,9 +58,7 @@ def do_deps(db_url):
         print("No dependencies found.")
 
 
-def do_yaml(db_url):
-    import yaml
-
+def do_yaml(db_url: str) -> None:
     with psycopg.connect(db_url, row_factory=namedtuple_row, autocommit=True) as s:
         i = get_inspector(s)
         defn = i.encodeable_definition()
@@ -68,7 +70,7 @@ def do_yaml(db_url):
     print(x.getvalue())
 
 
-def run(args):
+def run(args: argparse.Namespace) -> None:
     if args.command == "deps":
         do_deps(args.db_url)
 
@@ -76,10 +78,9 @@ def run(args):
         do_yaml(args.db_url)
 
     else:
-        raise ValueError("no such commend")
+        raise ValueError("no such command")
 
 
-def do_command():  # pragma: no cover
+def do_command() -> None:  # pragma: no cover
     args = parse_args(sys.argv[1:])
-    status = run(args)
-    sys.exit(status)
+    run(args)

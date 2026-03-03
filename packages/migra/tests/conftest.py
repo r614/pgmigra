@@ -1,7 +1,9 @@
 import os
+from uuid import uuid4
 
 import psycopg
 import pytest
+from psycopg import sql
 
 
 def _pg_url(dbname: str = "postgres") -> str:
@@ -21,12 +23,10 @@ def pg_admin():
 
 @pytest.fixture()
 def db(pg_admin):
-    from uuid import uuid4
-
     dbname = f"test_{uuid4().hex[:12]}"
-    pg_admin.execute(f"CREATE DATABASE {dbname}")
+    pg_admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(dbname)))
     yield _pg_url(dbname)
-    pg_admin.execute(f"DROP DATABASE IF EXISTS {dbname}")
+    pg_admin.execute(sql.SQL("DROP DATABASE IF EXISTS {}").format(sql.Identifier(dbname)))
 
 
 def pytest_addoption(parser):

@@ -3,9 +3,9 @@ from __future__ import annotations
 from functools import partial
 from typing import Any, TypeVar
 
-from schemainspect.inspected import Inspected
-from schemainspect.misc import quoted_identifier
-from schemainspect.pg.obj import (
+from .schemainspect.inspected import Inspected
+from .schemainspect.misc import quoted_identifier
+from .schemainspect.pg.obj import (
     InspectedEnum,
     InspectedIndex,
     InspectedSelectable,

@@ -176,12 +176,11 @@ with connect("postgresql:///source") as s0, connect("postgresql:///target") as s
 
 ### Using pre-inspected schemas
 
-If you already have `schemainspect` inspector objects, pass them directly to avoid redundant introspection:
+If you already have inspector objects, pass them directly to avoid redundant introspection:
 
 ```python
-from migra import Migration
+from migra import Migration, get_inspector
 from migra.db import connect
-from schemainspect import get_inspector
 
 with connect("postgresql:///source") as s0, connect("postgresql:///target") as s1:
     i0 = get_inspector(s0)
@@ -206,15 +205,12 @@ m.add_extension_changes(drops=False)  # only CREATE EXTENSION statements
 
 ## Development
 
-This is a UV workspace monorepo containing two packages:
-
-- `packages/migra` — schema diff and migration generation
-- `packages/schemainspect` — PostgreSQL schema introspection
+The source lives in `packages/migra/`, which includes `schemainspect` as a subpackage for PostgreSQL schema introspection.
 
 ### Setup
 
 ```bash
-just install     # uv sync --all-packages
+just install     # uv sync
 just test        # run all tests (requires local PostgreSQL)
 just lint        # ruff check
 just fmt         # ruff format + fix
@@ -227,8 +223,6 @@ Tests run against a real PostgreSQL instance. CI runs across a matrix of Python 
 
 ```bash
 just test                # all tests
-just test-migra          # migra tests only
-just test-schemainspect  # schemainspect tests only
 just test-cov            # with coverage
 ```
 

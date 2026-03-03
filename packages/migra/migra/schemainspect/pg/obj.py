@@ -1,6 +1,9 @@
 import textwrap
 from importlib import resources
+from io import StringIO
 from itertools import groupby
+
+import yaml
 
 from ..inspected import ColumnInfo, Inspected, TableRelated
 from ..inspected import InspectedSelectable as BaseInspectedSelectable
@@ -1612,14 +1615,8 @@ class PostgreSQL(DBInspector):
         return self._as_dicts()
 
     def as_yaml(self):
-        from io import StringIO as sio
-
-        import yaml
-
-        s = sio()
-
+        s = StringIO()
         yaml.safe_dump(self.encodeable_definition(), s)
-
         return s.getvalue()
 
     def one_schema(self, schema):

@@ -1,5 +1,5 @@
 from migra.db import connect
-from schemainspect import get_inspector
+from migra.schemainspect import get_inspector
 
 CHECK = r"CHECK (VALUE ~ '^\d{5}$'::text OR VALUE ~ '^\d{5}-\d{4}$'::text)"
 

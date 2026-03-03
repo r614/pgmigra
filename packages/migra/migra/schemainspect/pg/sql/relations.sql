@@ -52,7 +52,8 @@ r as (
         c.relforcerowsecurity::boolean as forcerowsecurity,
         c.relpersistence as persistence,
         c.relpages as page_size_estimate,
-        c.reltuples as row_count_estimate
+        c.reltuples as row_count_estimate,
+        pg_get_userbyid(c.relowner) as owner
     from
         pg_catalog.pg_class c
         inner join pg_catalog.pg_namespace n
@@ -92,7 +93,8 @@ select
     r.forcerowsecurity,
     r.persistence,
     r.page_size_estimate,
-    r.row_count_estimate
+    r.row_count_estimate,
+    r.owner
 FROM
     r
     left join pg_catalog.pg_attribute a

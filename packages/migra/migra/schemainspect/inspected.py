@@ -271,6 +271,7 @@ class InspectedSelectable(Inspected):
         rowsecurity=False,
         forcerowsecurity=False,
         persistence=None,
+        owner=None,
     ):
         self.name = name
         self.schema = schema
@@ -291,6 +292,7 @@ class InspectedSelectable(Inspected):
         self.rowsecurity = rowsecurity
         self.forcerowsecurity = forcerowsecurity
         self.persistence = persistence
+        self.owner = owner
 
     def __eq__(self, other):
         equalities = (

@@ -1352,6 +1352,7 @@ class PostgreSQL(DBInspector):
                 rowsecurity=f.rowsecurity,
                 forcerowsecurity=f.forcerowsecurity,
                 persistence=f.persistence,
+                owner=f.owner,
             )
             RELATIONTYPES = {
                 "r": "tables",

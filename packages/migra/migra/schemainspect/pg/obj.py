@@ -1383,6 +1383,7 @@ class PostgreSQL(DBInspector):
                     is_identity_always=c.is_identity_always,
                     is_generated=c.is_generated,
                     can_drop_generated=self.pg_version >= 13,
+                    generated_type=getattr(c, 'generated_type', None),
                 )
                 for c in clist
                 if c.position_number

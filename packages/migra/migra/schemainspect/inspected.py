@@ -70,6 +70,7 @@ class ColumnInfo(AutoRepr):
         is_generated=False,
         is_inherited=False,
         can_drop_generated=False,
+        generated_type=None,
     ):
         self.name = name or ""
         self.dbtype = dbtype
@@ -85,6 +86,7 @@ class ColumnInfo(AutoRepr):
         self.is_generated = is_generated
         self.is_inherited = is_inherited
         self.can_drop_generated = can_drop_generated
+        self.generated_type = generated_type
 
     def __eq__(self, other):
         return (
@@ -99,6 +101,7 @@ class ColumnInfo(AutoRepr):
             and self.is_identity_always == other.is_identity_always
             and self.is_generated == other.is_generated
             and self.is_inherited == other.is_inherited
+            and self.generated_type == other.generated_type
         )
 
     def alter_clauses(self, other):
@@ -190,7 +193,8 @@ class ColumnInfo(AutoRepr):
         if self.not_null:
             x += " not null"
         if self.is_generated:
-            x += f" generated always as ({self.default}) stored"
+            gen_kind = "virtual" if self.generated_type == "v" else "stored"
+            x += f" generated always as ({self.default}) {gen_kind}"
         elif self.default:
             x += f" default {self.default}"
         return x

@@ -86,7 +86,10 @@ class Migration:
         if drops:
             self.add(self.changes.extensions(drops_only=True))
 
-    def add_all_changes(self, privileges: bool = False, concurrent_indexes: bool = False) -> None:
+    def add_all_changes(self, privileges: bool = False, concurrent_indexes: bool = False, roles: bool = False) -> None:
+        if roles:
+            self.add(self.changes.roles(creations_only=True))
+
         self.add(self.changes.schemas(creations_only=True))
 
         self.add(self.changes.extensions(creations_only=True, modifications=False))
@@ -127,6 +130,10 @@ class Migration:
         self.add(self.changes.triggers(creations_only=True))
         self.add(self.changes.comments(creations_only=True))
         self.add(self.changes.collations(drops_only=True))
+
+        if roles:
+            self.add(self.changes.roles(drops_only=True))
+
         self.add(self.changes.schemas(drops_only=True))
 
         if concurrent_indexes:

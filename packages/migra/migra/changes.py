@@ -735,6 +735,15 @@ class Changes:
             modifications_as_alters=True,
         )
 
+    @property
+    def roles(self) -> partial[Statements]:
+        return partial(
+            statements_for_changes,
+            getattr(self.i_from, 'roles', {}),
+            getattr(self.i_target, 'roles', {}),
+            modifications_as_alters=True,
+        )
+
     def __getattr__(self, name: str) -> partial[Statements]:
         if name in THINGS:
             return partial(

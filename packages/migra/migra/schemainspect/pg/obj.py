@@ -36,6 +36,7 @@ COLLATIONS_QUERY = _read_sql("collations.sql")
 COLLATIONS_QUERY_9 = _read_sql("collations9.sql")
 RLSPOLICIES_QUERY = _read_sql("rlspolicies.sql")
 COMMENTS_QUERY = _read_sql("comments.sql")
+ROLES_QUERY = _read_sql("roles.sql")
 
 
 class InspectedSelectable(BaseInspectedSelectable):
@@ -679,6 +680,85 @@ class InspectedComment(Inspected):
         )
 
 
+class InspectedRole(Inspected):
+    def __init__(self, name, superuser, inherit, createrole, createdb, login, replication, bypassrls, connlimit, member_of):
+        self.name = name
+        self.schema = ""
+        self.superuser = superuser
+        self.inherit = inherit
+        self.createrole = createrole
+        self.createdb = createdb
+        self.login = login
+        self.replication = replication
+        self.bypassrls = bypassrls
+        self.connlimit = connlimit
+        self.member_of = member_of or []
+
+    @property
+    def quoted_full_name(self):
+        return quoted_identifier(self.name)
+
+    @property
+    def options_clause(self):
+        opts = []
+        if self.superuser:
+            opts.append("SUPERUSER")
+        if self.createdb:
+            opts.append("CREATEDB")
+        if self.createrole:
+            opts.append("CREATEROLE")
+        if self.login:
+            opts.append("LOGIN")
+        if self.replication:
+            opts.append("REPLICATION")
+        if self.bypassrls:
+            opts.append("BYPASSRLS")
+        if not self.inherit:
+            opts.append("NOINHERIT")
+        if self.connlimit >= 0:
+            opts.append(f"CONNECTION LIMIT {self.connlimit}")
+        return " ".join(opts)
+
+    @property
+    def create_statement(self):
+        opts = self.options_clause
+        stmt = f"create role {self.quoted_full_name}"
+        if opts:
+            stmt += f" {opts}"
+        return stmt + ";"
+
+    @property
+    def drop_statement(self):
+        return f"drop role if exists {self.quoted_full_name};"
+
+    def alter_statements(self, other):
+        stmts = []
+        if self.options_clause != other.options_clause:
+            opts = self.options_clause
+            stmts.append(f"alter role {self.quoted_full_name} {opts};")
+        old_memberships = set(other.member_of)
+        new_memberships = set(self.member_of)
+        for role in sorted(new_memberships - old_memberships):
+            stmts.append(f"grant {quoted_identifier(role)} to {self.quoted_full_name};")
+        for role in sorted(old_memberships - new_memberships):
+            stmts.append(f"revoke {quoted_identifier(role)} from {self.quoted_full_name};")
+        return stmts
+
+    def __eq__(self, other):
+        return (
+            self.name == other.name
+            and self.superuser == other.superuser
+            and self.inherit == other.inherit
+            and self.createrole == other.createrole
+            and self.createdb == other.createdb
+            and self.login == other.login
+            and self.replication == other.replication
+            and self.bypassrls == other.bypassrls
+            and self.connlimit == other.connlimit
+            and sorted(self.member_of) == sorted(other.member_of)
+        )
+
+
 class InspectedType(Inspected):
     def __init__(self, name, schema, columns):
         self.name = name
@@ -1101,6 +1181,7 @@ class PostgreSQL(DBInspector):
         self.PRIVILEGES_QUERY = processed(PRIVILEGES_QUERY)
         self.TRIGGERS_QUERY = processed(TRIGGERS_QUERY)
         self.COMMENTS_QUERY = processed(COMMENTS_QUERY)
+        self.ROLES_QUERY = processed(ROLES_QUERY)
 
         super().__init__(c, include_internal)
 
@@ -1123,6 +1204,7 @@ class PostgreSQL(DBInspector):
         self.load_types()
         self.load_domains()
         self.load_comments()
+        self.load_roles()
 
         self.load_deps()
         self.load_deps_all()
@@ -1639,6 +1721,25 @@ class PostgreSQL(DBInspector):
             for i in q
         ]
         self.comments = {c.key: c for c in comments}
+
+    def load_roles(self):
+        q = self.execute(self.ROLES_QUERY)
+        roles = [
+            InspectedRole(
+                name=i.name,
+                superuser=i.superuser,
+                inherit=i.inherit,
+                createrole=i.createrole,
+                createdb=i.createdb,
+                login=i.login,
+                replication=i.replication,
+                bypassrls=i.bypassrls,
+                connlimit=i.connlimit,
+                member_of=i.member_of,
+            )
+            for i in q
+        ]
+        self.roles = {r.name: r for r in roles}
 
     def filter_schema(self, schema=None, exclude_schema=None):
         if schema and exclude_schema:

@@ -969,13 +969,31 @@ to {roleslist}{qual_clause}{withcheck_clause};
     def drop_statement(self):
         return f"drop policy {self.quoted_name} on {self.quoted_full_table_name};"
 
+    @property
+    def alter_statement(self):
+        parts = [f"alter policy {self.quoted_name} on {self.quoted_full_table_name}"]
+
+        roleslist = ", ".join(self.roles)
+        parts.append(f"to {roleslist}")
+
+        if self.qual:
+            parts.append(f"using ({self.qual})")
+
+        if self.withcheck:
+            parts.append(f"with check ({self.withcheck})")
+
+        return "\n".join(parts) + ";"
+
+    def alter_statements(self, other):
+        return [self.alter_statement]
+
     def __eq__(self, other):
         equalities = (
-            self.name == self.name,
+            self.name == other.name,
             self.schema == other.schema,
-            self.permissiveness == other.permissiveness,
-            self.commandtype == other.commandtype,
+            self.table_name == other.table_name,
             self.permissive == other.permissive,
+            self.commandtype == other.commandtype,
             self.roles == other.roles,
             self.qual == other.qual,
             self.withcheck == other.withcheck,

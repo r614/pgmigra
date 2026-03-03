@@ -714,6 +714,15 @@ class Changes:
             modifications=False,
         )
 
+    @property
+    def rlspolicies(self) -> partial[Statements]:
+        return partial(
+            statements_for_changes,
+            self.i_from.rlspolicies,
+            self.i_target.rlspolicies,
+            modifications_as_alters=True,
+        )
+
     def __getattr__(self, name: str) -> partial[Statements]:
         if name in THINGS:
             return partial(

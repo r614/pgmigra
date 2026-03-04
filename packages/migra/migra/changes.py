@@ -20,6 +20,7 @@ THINGS = [
     "schemas",
     "enums",
     "domains",
+    "range_types",
     "sequences",
     "constraints",
     "functions",
@@ -576,11 +577,21 @@ def get_selectable_changes(
                     new = selectables_target[k]
                     if k in selectables_from:
                         old = selectables_from[k]
-                        if hasattr(new, 'owner') and hasattr(old, 'owner') and new.owner and old.owner and new.owner != old.owner:
-                            if new.relationtype == 'v':
-                                statements.append(f"alter view {new.quoted_full_name} owner to {quoted_identifier(new.owner)};")
-                            elif new.relationtype == 'm':
-                                statements.append(f"alter materialized view {new.quoted_full_name} owner to {quoted_identifier(new.owner)};")
+                        if (
+                            hasattr(new, "owner")
+                            and hasattr(old, "owner")
+                            and new.owner
+                            and old.owner
+                            and new.owner != old.owner
+                        ):
+                            if new.relationtype == "v":
+                                statements.append(
+                                    f"alter view {new.quoted_full_name} owner to {quoted_identifier(new.owner)};"
+                                )
+                            elif new.relationtype == "m":
+                                statements.append(
+                                    f"alter materialized view {new.quoted_full_name} owner to {quoted_identifier(new.owner)};"
+                                )
     return statements
 
 
@@ -739,8 +750,8 @@ class Changes:
     def roles(self) -> partial[Statements]:
         return partial(
             statements_for_changes,
-            getattr(self.i_from, 'roles', {}),
-            getattr(self.i_target, 'roles', {}),
+            getattr(self.i_from, "roles", {}),
+            getattr(self.i_target, "roles", {}),
             modifications_as_alters=True,
         )
 

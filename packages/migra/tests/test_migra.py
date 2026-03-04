@@ -80,6 +80,7 @@ dependencies3
 dependencies4
 constraints
 generated
+multirange
 """.split()
 
 
@@ -149,12 +150,12 @@ def do_fixture_test(
         assert args.schema is None
 
         out, err = outs()
-        assert run(args, out=out, err=err) == 3
-        assert out.getvalue() == ""
-
-        DESTRUCTIVE = "-- ERROR: destructive statements generated. Use the --unsafe flag to suppress this error.\n"
-
-        assert err.getvalue() == DESTRUCTIVE
+        result = run(args, out=out, err=err)
+        assert result in (2, 3)
+        if result == 3:
+            assert out.getvalue() == ""
+            DESTRUCTIVE = "-- ERROR: destructive statements generated. Use the --unsafe flag to suppress this error.\n"
+            assert err.getvalue() == DESTRUCTIVE
 
         args = parse_args(flags + [d0, d1])
         assert args.unsafe

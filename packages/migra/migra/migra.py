@@ -86,7 +86,12 @@ class Migration:
         if drops:
             self.add(self.changes.extensions(drops_only=True))
 
-    def add_all_changes(self, privileges: bool = False, concurrent_indexes: bool = False, roles: bool = False) -> None:
+    def add_all_changes(
+        self,
+        privileges: bool = False,
+        concurrent_indexes: bool = False,
+        roles: bool = False,
+    ) -> None:
         if roles:
             self.add(self.changes.roles(creations_only=True))
 
@@ -97,9 +102,10 @@ class Migration:
         self.add(self.changes.collations(creations_only=True))
         self.add(self.changes.enums(creations_only=True, modifications=False))
         self.add(self.changes.domains(creations_only=True))
+        self.add(self.changes.range_types(creations_only=True))
         self.add(self.changes.sequences(creations_only=True))
         self.add(self.changes.triggers(drops_only=True))
-        self.add(self.changes.rlspolicies(drops_only=True))
+        self.add(self.changes.rlspolicies(drops_only=True, modifications=False))
         if privileges:
             self.add(self.changes.privileges(drops_only=True))
         self.add(self.changes.non_pk_constraints(drops_only=True))
@@ -114,6 +120,7 @@ class Migration:
         self.add(self.changes.tables_only_selectables())
 
         self.add(self.changes.sequences(drops_only=True))
+        self.add(self.changes.range_types(drops_only=True))
         self.add(self.changes.domains(drops_only=True))
         self.add(self.changes.enums(drops_only=True, modifications=False))
         self.add(self.changes.extensions(drops_only=True, modifications=False))
@@ -126,7 +133,8 @@ class Migration:
 
         if privileges:
             self.add(self.changes.privileges(creations_only=True))
-        self.add(self.changes.rlspolicies(creations_only=True))
+        self.add(self.changes.rlspolicies(modifications_only=True))
+        self.add(self.changes.rlspolicies(creations_only=True, modifications=False))
         self.add(self.changes.triggers(creations_only=True))
         self.add(self.changes.comments(creations_only=True))
         self.add(self.changes.collations(drops_only=True))

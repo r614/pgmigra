@@ -37,6 +37,7 @@ COLLATIONS_QUERY_9 = _read_sql("collations9.sql")
 RLSPOLICIES_QUERY = _read_sql("rlspolicies.sql")
 COMMENTS_QUERY = _read_sql("comments.sql")
 ROLES_QUERY = _read_sql("roles.sql")
+RANGE_TYPES_QUERY = _read_sql("range_types.sql")
 
 
 class InspectedSelectable(BaseInspectedSelectable):
@@ -681,7 +682,19 @@ class InspectedComment(Inspected):
 
 
 class InspectedRole(Inspected):
-    def __init__(self, name, superuser, inherit, createrole, createdb, login, replication, bypassrls, connlimit, member_of):
+    def __init__(
+        self,
+        name,
+        superuser,
+        inherit,
+        createrole,
+        createdb,
+        login,
+        replication,
+        bypassrls,
+        connlimit,
+        member_of,
+    ):
         self.name = name
         self.schema = ""
         self.superuser = superuser
@@ -741,7 +754,9 @@ class InspectedRole(Inspected):
         for role in sorted(new_memberships - old_memberships):
             stmts.append(f"grant {quoted_identifier(role)} to {self.quoted_full_name};")
         for role in sorted(old_memberships - new_memberships):
-            stmts.append(f"revoke {quoted_identifier(role)} from {self.quoted_full_name};")
+            stmts.append(
+                f"revoke {quoted_identifier(role)} from {self.quoted_full_name};"
+            )
         return stmts
 
     def __eq__(self, other):
@@ -1111,6 +1126,8 @@ to {roleslist}{qual_clause}{withcheck_clause};
         return "\n".join(parts) + ";"
 
     def alter_statements(self, other):
+        if self.permissive != other.permissive or self.commandtype != other.commandtype:
+            return [other.drop_statement, self.create_statement]
         return [self.alter_statement]
 
     def __eq__(self, other):
@@ -1127,7 +1144,57 @@ to {roleslist}{qual_clause}{withcheck_clause};
         return all(equalities)
 
 
-PROPS = "schemas relations tables views functions selectables sequences constraints indexes enums extensions privileges collations triggers rlspolicies domains comments"
+class InspectedRangeType(Inspected):
+    def __init__(
+        self,
+        name,
+        schema,
+        subtype,
+        collation,
+        subtype_opclass,
+        canonical,
+        subtype_diff,
+    ):
+        self.name = name
+        self.schema = schema
+        self.subtype = subtype
+        self.collation = collation
+        self.subtype_opclass = subtype_opclass
+        self.canonical = canonical
+        self.subtype_diff = subtype_diff
+
+    @property
+    def create_statement(self):
+        parts = [f"subtype = {self.subtype}"]
+        if self.subtype_opclass:
+            parts.append(f"subtype_opclass = {self.subtype_opclass}")
+        if self.collation:
+            parts.append(f"collation = {self.collation}")
+        if self.canonical:
+            parts.append(f"canonical = {self.canonical}")
+        if self.subtype_diff:
+            parts.append(f"subtype_diff = {self.subtype_diff}")
+        options = ",\n    ".join(parts)
+        return f"create type {self.quoted_full_name} as range (\n    {options}\n);"
+
+    @property
+    def drop_statement(self):
+        return f"drop type {self.quoted_full_name};"
+
+    equality_attributes = (
+        "schema name subtype collation subtype_opclass canonical subtype_diff".split()
+    )
+
+    def __eq__(self, other):
+        try:
+            return all(
+                getattr(self, a) == getattr(other, a) for a in self.equality_attributes
+            )
+        except AttributeError:
+            return False
+
+
+PROPS = "schemas relations tables views functions selectables sequences constraints indexes enums extensions privileges collations triggers rlspolicies domains range_types comments"
 
 
 class PostgreSQL(DBInspector):
@@ -1182,6 +1249,7 @@ class PostgreSQL(DBInspector):
         self.TRIGGERS_QUERY = processed(TRIGGERS_QUERY)
         self.COMMENTS_QUERY = processed(COMMENTS_QUERY)
         self.ROLES_QUERY = processed(ROLES_QUERY)
+        self.RANGE_TYPES_QUERY = processed(RANGE_TYPES_QUERY)
 
         super().__init__(c, include_internal)
 
@@ -1203,6 +1271,7 @@ class PostgreSQL(DBInspector):
         self.load_rlspolicies()
         self.load_types()
         self.load_domains()
+        self.load_range_types()
         self.load_comments()
         self.load_roles()
 
@@ -1465,7 +1534,7 @@ class PostgreSQL(DBInspector):
                     is_identity_always=c.is_identity_always,
                     is_generated=c.is_generated,
                     can_drop_generated=self.pg_version >= 13,
-                    generated_type=getattr(c, 'generated_type', None),
+                    generated_type=getattr(c, "generated_type", None),
                 )
                 for c in clist
                 if c.position_number
@@ -1708,6 +1777,22 @@ class PostgreSQL(DBInspector):
         ]  # type: list[InspectedType]
         self.domains = {t.signature: t for t in domains}
 
+    def load_range_types(self):
+        q = self.execute(self.RANGE_TYPES_QUERY)
+        range_types = [
+            InspectedRangeType(
+                name=i.name,
+                schema=i.schema,
+                subtype=i.subtype,
+                collation=i.collation,
+                subtype_opclass=i.subtype_opclass,
+                canonical=i.canonical,
+                subtype_diff=i.subtype_diff,
+            )
+            for i in q
+        ]
+        self.range_types = {t.signature: t for t in range_types}
+
     def load_comments(self):
         q = self.execute(self.COMMENTS_QUERY)
         comments = [
@@ -1818,6 +1903,7 @@ class PostgreSQL(DBInspector):
 
     def filter_schemas(self, schemas):
         """Filter to only include objects from the specified schemas."""
+
         def in_schemas(x):
             return x.schema in schemas
 
@@ -1848,5 +1934,6 @@ class PostgreSQL(DBInspector):
             and self.collations == other.collations
             and self.rlspolicies == other.rlspolicies
             and self.domains == other.domains
+            and self.range_types == other.range_types
             and self.comments == other.comments
         )

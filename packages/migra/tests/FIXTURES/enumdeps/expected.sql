@@ -12,7 +12,7 @@ create table "public"."created_with_e" (
 );
 
 
-alter table "public"."t" alter column category type "public"."e" using category::text::"public"."e";
+alter table "public"."t" alter column "category" type "public"."e" using "category"::text::"public"."e";
 
 drop type "public"."e__old_version_to_be_dropped";
 

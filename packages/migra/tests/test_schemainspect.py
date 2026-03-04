@@ -2,7 +2,7 @@ from copy import deepcopy
 
 from migra import schemainspect
 from migra.schemainspect.inspected import ColumnInfo
-from migra.schemainspect.pg.obj import (
+from migra.schemainspect.pg.objects import (
     InspectedConstraint,
     InspectedEnum,
     InspectedExtension,

@@ -70,7 +70,7 @@ create table "public"."order_items" (
 );
 
 
-alter table "public"."orders" alter column status type "public"."shipping_status" using status::text::"public"."shipping_status";
+alter table "public"."orders" alter column "status" type "public"."shipping_status" using "status"::text::"public"."shipping_status";
 
 drop type "public"."shipping_status__old_version_to_be_dropped";
 

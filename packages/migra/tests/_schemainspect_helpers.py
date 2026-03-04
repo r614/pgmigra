@@ -4,7 +4,7 @@ from copy import deepcopy
 from migra.schemainspect import to_pytype
 from migra.schemainspect.inspected import ColumnInfo
 from migra.schemainspect.misc import quoted_identifier
-from migra.schemainspect.pg.obj import InspectedPrivilege
+from migra.schemainspect.pg.objects import InspectedPrivilege
 from pytest import raises
 
 T_CREATE = """create table "public"."films" (

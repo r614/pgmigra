@@ -2,26 +2,38 @@
 
 [![Test](https://github.com/r614/migra/actions/workflows/test.yml/badge.svg)](https://github.com/r614/migra/actions/workflows/test.yml)
 
-Like `diff` but for PostgreSQL schemas. Compares two database schemas and generates the SQL statements needed to make them match.
+Like `diff` but for PostgreSQL schemas.
 
-```bash
+```console
 $ migra postgresql:///a postgresql:///b
 alter table "public"."products" add column newcolumn text;
 
 alter table "public"."products" add constraint "x" CHECK ((price > (0)::numeric));
 ```
 
-This is an opinionated fork/rewrite of [djrobstep/migra](https://github.com/djrobstep/migra), which is no longer maintained. It fixes some core issues and modernizes the repo, bundling [schemainspect](https://github.com/djrobstep/schemainspect) into a single monorepo.
+## Highlights
+
+- Compares two PostgreSQL databases and generates the SQL to make them match.
+- Handles tables, views, functions, constraints, indexes, sequences, enums, triggers, RLS policies,
+  privileges, and more.
+- Dependency-aware — drops and creates views, functions, and types in the correct order.
+- Safe by default — refuses to generate `DROP` statements unless `--unsafe` is passed.
+- Usable as a CLI tool or as a Python library.
+- Ignores extension-managed schema contents, leaving them to the extension.
+
+migra is a rewrite of [djrobstep/migra](https://github.com/djrobstep/migra) and
+[djrobstep/schemainspect](https://github.com/djrobstep/schemainspect), which are no longer
+maintained.
 
 ## Installation
 
-Install directly from GitHub:
+Install from GitHub with pip:
 
 ```bash
 pip install "migra @ git+https://github.com/r614/migra.git#subdirectory=packages/migra"
 ```
 
-Or with `uv`:
+Or with [uv](https://github.com/astral-sh/uv):
 
 ```bash
 uv add "migra @ git+https://github.com/r614/migra.git#subdirectory=packages/migra"
@@ -29,98 +41,58 @@ uv add "migra @ git+https://github.com/r614/migra.git#subdirectory=packages/migr
 
 ## Features
 
-| Feature | Notes |
-|---------|-------|
-| Tables | Including partitioned, inherited, unlogged |
-| Views | Including materialized views |
-| Functions / Procedures | All languages except C/INTERNAL |
-| Constraints | Primary keys, foreign keys, unique, check |
-| Indexes | |
-| Sequences | Does not track sequence numbers |
-| Schemas | |
-| Extensions | |
-| Enums | |
-| Privileges | Requires `--with-privileges` flag |
-| Row-level security | |
-| Triggers | |
-| Identity columns | |
-| Generated columns | |
-| Collations | |
-| Custom types/domains | Drop-and-create only, no alter |
+### Schema diffing
 
-Extension-managed schema contents are ignored and left to the extension to manage. View and function dependencies are handled automatically — migra drops and creates them in the correct order.
+Compare any two PostgreSQL databases and get the migration SQL:
 
-## Usage
-
-### Comparing two databases
-
-```bash
-migra postgresql:///source postgresql:///target
+```console
+$ migra postgresql:///source postgresql:///target
+create table "public"."users" (
+    "id" serial primary key,
+    "email" text not null
+);
 ```
 
-This outputs the SQL required to transform `source`'s schema to match `target`. Empty output means the schemas already match.
+Empty output means the schemas already match.
 
-### Safety
+### Safe migrations
 
-By default, migra exits with an error if any `DROP` statements would be generated. Use `--unsafe` to allow destructive statements:
+By default, migra exits with an error if any `DROP` statements would be generated. Use `--unsafe`
+to allow destructive changes:
 
-```bash
-migra --unsafe postgresql:///source postgresql:///target
+```console
+$ migra --unsafe postgresql:///source postgresql:///target
+drop table "public"."old_table";
 ```
 
-### Generating a migration script
+### Generating migration scripts
 
-```bash
-migra --unsafe postgresql:///production postgresql:///target > migration.sql
+Pipe the output to a file, review it, then apply in a transaction:
+
+```console
+$ migra --unsafe postgresql:///production postgresql:///target > migration.sql
+$ psql postgresql:///production -1 -f migration.sql
 ```
 
-Review the script, then apply it:
-
-```bash
-psql postgresql:///production -1 -f migration.sql
-```
-
-The `-1` flag wraps the migration in a single transaction.
-
-### Comparing against an empty database
+### Schema creation from scratch
 
 Use `EMPTY` as the source to generate full schema creation SQL:
 
-```bash
-migra --unsafe EMPTY postgresql:///mydb
+```console
+$ migra --unsafe EMPTY postgresql:///mydb
 ```
 
-### CLI options
+### Privileges and roles
 
-| Flag | Description |
-|------|-------------|
-| `--unsafe` | Allow `DROP` statements (default: error on drops) |
-| `--schema SCHEMA` | Restrict diff to a single schema |
-| `--exclude_schema SCHEMA` | Exclude a schema from the diff |
-| `--create-extensions-only` | Only output `CREATE EXTENSION` statements |
-| `--ignore-extension-versions` | Ignore version differences for extensions |
-| `--with-privileges` | Include `GRANT`/`REVOKE` statements |
-| `--force-utf8` | Force UTF-8 encoding for output |
+Include `GRANT`/`REVOKE` statements and role diffing with opt-in flags:
 
-### Connection URLs
-
-migra uses standard PostgreSQL connection URLs:
-
-```
-postgresql://username:password@hostname/databasename
+```console
+$ migra --with-privileges --with-roles postgresql:///a postgresql:///b
 ```
 
-For local connections with trust authentication:
+### Python API
 
-```
-postgresql:///mydatabase
-```
-
-See the [PostgreSQL docs](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING) for full URL format details.
-
-## Python API
-
-### Basic usage
+Use migra programmatically for auto-syncing, CI checks, or custom workflows:
 
 ```python
 from migra import Migration
@@ -133,81 +105,56 @@ with connect("postgresql:///source") as s0, connect("postgresql:///target") as s
     print(m.sql)
 ```
 
-### Auto-syncing a dev database
+### Supported objects
 
-```python
-from migra import Migration
-from migra.db import connect, temporary_database
+| Object | Notes |
+| --- | --- |
+| Tables | Including partitioned, inherited, unlogged |
+| Views | Including materialized views |
+| Functions / Procedures | All languages except C/INTERNAL |
+| Constraints | Primary keys, foreign keys, unique, check |
+| Indexes | |
+| Sequences | Does not track sequence numbers |
+| Schemas | |
+| Extensions | |
+| Enums | |
+| Privileges | Requires `--with-privileges` |
+| Roles | Requires `--with-roles` |
+| Row-level security | |
+| Triggers | |
+| Identity columns | |
+| Generated columns | |
+| Collations | |
+| Domains | |
+| Range types | |
 
-DB_URL = "postgresql:///my_dev_db"
+### CLI reference
 
-with temporary_database() as temp_url:
-    load_target_schema(temp_url)  # your setup function
+| Flag | Description |
+| --- | --- |
+| `--unsafe` | Allow `DROP` statements |
+| `--schema SCHEMA` | Restrict diff to specific schema(s) |
+| `--exclude-schema SCHEMA` | Exclude a schema from the diff |
+| `--create-extensions-only` | Only output `CREATE EXTENSION` statements |
+| `--ignore-extension-versions` | Ignore version differences for extensions |
+| `--with-privileges` | Include `GRANT`/`REVOKE` statements |
+| `--with-roles` | Include role diffing |
+| `--force-utf8` | Force UTF-8 encoding for output |
+| `--concurrent-indexes` | Use `CREATE INDEX CONCURRENTLY` |
 
-    with connect(DB_URL) as s_current, connect(temp_url) as s_target:
-        m = Migration(s_current, s_target)
-        m.set_safety(False)
-        m.add_all_changes()
+### Connection URLs
 
-        if m.statements:
-            print("Pending changes:\n")
-            print(m.sql)
-            if input("Apply? ") == "yes":
-                m.apply()
-        else:
-            print("Already synced.")
+migra uses standard PostgreSQL connection URLs:
+
+```
+postgresql://username:password@hostname/databasename
+postgresql:///mydatabase  # local with trust auth
 ```
 
-### Applying changes programmatically
+See the [PostgreSQL docs](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+for full URL format details.
 
-```python
-from migra import Migration
-from migra.db import connect
-
-with connect("postgresql:///source") as s0, connect("postgresql:///target") as s1:
-    m = Migration(s0, s1)
-    m.set_safety(False)
-    m.add_all_changes()
-
-    if m.statements:
-        m.apply()  # executes statements against source db
-        # source schema now matches target
-```
-
-### Using pre-inspected schemas
-
-If you already have inspector objects, pass them directly to avoid redundant introspection:
-
-```python
-from migra import Migration, get_inspector
-from migra.db import connect
-
-with connect("postgresql:///source") as s0, connect("postgresql:///target") as s1:
-    i0 = get_inspector(s0)
-    i1 = get_inspector(s1)
-    m = Migration(i0, i1)
-    m.set_safety(False)
-    m.add_all_changes()
-    print(m.sql)
-```
-
-### Including privileges
-
-```python
-m.add_all_changes(privileges=True)
-```
-
-### Extension-only changes
-
-```python
-m.add_extension_changes(drops=False)  # only CREATE EXTENSION statements
-```
-
-## Development
-
-The source lives in `packages/migra/`, which includes `schemainspect` as a subpackage for PostgreSQL schema introspection.
-
-### Setup
+## Contributing
 
 ```bash
 just install     # uv sync
@@ -217,26 +164,17 @@ just fmt         # ruff format + fix
 just typecheck   # ty check
 ```
 
-### Testing
-
-Tests run against a real PostgreSQL instance. CI runs across a matrix of Python 3.10-3.13 and PostgreSQL 14-17.
+Tests run against a real PostgreSQL instance. CI runs across Python 3.10-3.13 and PostgreSQL 14-17.
 
 ```bash
-just test                # all tests
-just test-cov            # with coverage
+just test-pg 16      # test against PG 16 via Docker
+just test-pg-all     # test against PG 14, 15, 16, 17
 ```
 
-To test against a specific PostgreSQL version locally via Docker:
+## Acknowledgements
 
-```bash
-just test-pg 16          # run tests against PG 16
-just test-pg-all         # run tests against PG 14, 15, 16, 17
-just test-pg-stop        # stop all test containers
-```
-
-## Credits
-
-Originally created by [Robert Lechte](https://github.com/djrobstep). This fork is maintained by [r614](https://github.com/r614).
+Originally created by [Robert Lechte](https://github.com/djrobstep). This fork is maintained by
+[r614](https://github.com/r614).
 
 ## License
 

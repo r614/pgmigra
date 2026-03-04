@@ -6,7 +6,9 @@ def test_domain_diffing():
     """Verify domains are included in migration diffs."""
     with temporary_database() as d0, temporary_database() as d1:
         with connect(d1) as s1:
-            s1.execute("CREATE DOMAIN email_address AS text CHECK (VALUE ~ '^[^@]+@[^@]+$');")
+            s1.execute(
+                "CREATE DOMAIN email_address AS text CHECK (VALUE ~ '^[^@]+@[^@]+$');"
+            )
 
         with connect(d0) as s0, connect(d1) as s1:
             m = Migration(s0, s1)

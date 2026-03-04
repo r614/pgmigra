@@ -1,4 +1,4 @@
-from migra.schemainspect.pg.obj import InspectedPrivilege
+from migra.schemainspect.pg.objects import InspectedPrivilege
 
 
 def test_inspected_privilege():

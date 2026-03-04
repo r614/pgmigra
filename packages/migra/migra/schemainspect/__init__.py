@@ -1,5 +1,3 @@
-from graphlib import TopologicalSorter  # noqa
-
 from . import pg
 from .command import do_command
 from .get import get_inspector

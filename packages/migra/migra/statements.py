@@ -29,8 +29,9 @@ class Statements(list[str]):
             )
 
     def __add__(self, other: Iterable[str]) -> Statements:
-        self += list(other)
-        return self
+        result = Statements(list(self) + list(other))
+        result.safe = self.safe
+        return result
 
 
 class UnsafeMigrationException(Exception):

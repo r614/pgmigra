@@ -40,9 +40,6 @@ class Inspected(AutoRepr):
     def alter_statements(self, other: Inspected) -> list[str]:
         raise NotImplementedError
 
-    def __ne__(self, other: object) -> bool:
-        return not self == other
-
 
 class TableRelated:
     schema: str

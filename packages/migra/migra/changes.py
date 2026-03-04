@@ -6,36 +6,36 @@ from typing import Any, TypeVar
 
 from .schemainspect.inspected import Inspected
 from .schemainspect.misc import quoted_identifier
-from .schemainspect.pg.obj import (
+from .schemainspect.pg.objects import (
     InspectedEnum,
     InspectedIndex,
     InspectedSelectable,
     InspectedSequence,
     InspectedTrigger,
 )
+from .schemainspect.pg.registry import REGISTRY
 from .statements import Statements
-from .util import differences
 
-THINGS = [
-    "schemas",
-    "enums",
-    "domains",
-    "range_types",
-    "sequences",
-    "constraints",
-    "functions",
-    "views",
-    "indexes",
-    "extensions",
-    "privileges",
-    "collations",
-    "rlspolicies",
-    "triggers",
-    "comments",
-]
 PK = "PRIMARY KEY"
 
 InspectedT = TypeVar("InspectedT", bound=Inspected)
+V = TypeVar("V")
+
+
+def differences(
+    a: dict[str, V],
+    b: dict[str, V],
+) -> tuple[dict[str, V], dict[str, V], dict[str, V], dict[str, V]]:
+    a_keys = set(a.keys())
+    b_keys = set(b.keys())
+    keys_added = b_keys - a_keys
+    keys_removed = a_keys - b_keys
+    keys_common = a_keys & b_keys
+    added = {k: b[k] for k in sorted(keys_added)}
+    removed = {k: a[k] for k in sorted(keys_removed)}
+    modified = {k: b[k] for k in sorted(keys_common) if a[k] != b[k]}
+    unmodified = {k: b[k] for k in sorted(keys_common) if a[k] == b[k]}
+    return added, removed, modified, unmodified
 
 
 def statements_for_changes(
@@ -702,30 +702,25 @@ class Changes:
             self.i_target.enums,
         )
 
+    @staticmethod
+    def _is_mv_index(i: InspectedIndex, ii: Any) -> bool:
+        sig = quoted_identifier(i.table_name, i.schema)
+        return sig in ii.materialized_views
+
     @property
     def mv_indexes(self) -> partial[Statements]:
         a = self.i_from.indexes.items()
         b = self.i_target.indexes.items()
-
-        def is_mv_index(i: InspectedIndex, ii: Any) -> bool:
-            sig = quoted_identifier(i.table_name, i.schema)
-            return sig in ii.materialized_views
-
-        a_od = {k: v for k, v in a if is_mv_index(v, self.i_from)}
-        b_od = {k: v for k, v in b if is_mv_index(v, self.i_target)}
+        a_od = {k: v for k, v in a if self._is_mv_index(v, self.i_from)}
+        b_od = {k: v for k, v in b if self._is_mv_index(v, self.i_target)}
         return partial(statements_for_changes, a_od, b_od)
 
     @property
     def non_mv_indexes(self) -> partial[Statements]:
         a = self.i_from.indexes.items()
         b = self.i_target.indexes.items()
-
-        def is_mv_index(i: InspectedIndex, ii: Any) -> bool:
-            sig = quoted_identifier(i.table_name, i.schema)
-            return sig in ii.materialized_views
-
-        a_od = {k: v for k, v in a if not is_mv_index(v, self.i_from)}
-        b_od = {k: v for k, v in b if not is_mv_index(v, self.i_target)}
+        a_od = {k: v for k, v in a if not self._is_mv_index(v, self.i_from)}
+        b_od = {k: v for k, v in b if not self._is_mv_index(v, self.i_target)}
         return partial(statements_for_changes, a_od, b_od)
 
     @property
@@ -756,12 +751,11 @@ class Changes:
         )
 
     def __getattr__(self, name: str) -> partial[Statements]:
-        if name in THINGS:
+        if name in REGISTRY:
             return partial(
                 statements_for_changes,
                 getattr(self.i_from, name),
                 getattr(self.i_target, name),
             )
 
-        else:
-            raise AttributeError(name)
+        raise AttributeError(name)

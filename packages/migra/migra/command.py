@@ -117,7 +117,11 @@ def run(
         if args.create_extensions_only:
             m.add_extension_changes(drops=False)
         else:
-            m.add_all_changes(privileges=args.with_privileges, concurrent_indexes=args.concurrent_indexes, roles=args.with_roles)
+            m.add_all_changes(
+                privileges=args.with_privileges,
+                concurrent_indexes=args.concurrent_indexes,
+                roles=args.with_roles,
+            )
         try:
             if m.statements:
                 if args.force_utf8:

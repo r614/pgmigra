@@ -1,2 +1,2 @@
 from . import obj  # noqa
-from .obj import PostgreSQL  # noqa
+from .inspector import PostgreSQL  # noqa

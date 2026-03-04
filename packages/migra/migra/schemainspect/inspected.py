@@ -62,7 +62,6 @@ class ColumnInfo:
         is_identity_always=False,
         is_generated=False,
         is_inherited=False,
-        can_drop_generated=False,
         generated_type=None,
     ):
         self.name = name or ""
@@ -78,7 +77,6 @@ class ColumnInfo:
         self.is_identity_always = is_identity_always
         self.is_generated = is_generated
         self.is_inherited = is_inherited
-        self.can_drop_generated = can_drop_generated
         self.generated_type = generated_type
 
     def __eq__(self, other):

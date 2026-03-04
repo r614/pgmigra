@@ -324,12 +324,8 @@ def get_table_changes(
 
             generated_status_removed = not c.is_generated and c_before.is_generated
 
-            can_drop_generated = (
-                generated_status_removed and c_before.can_drop_generated
-            )
-
             drop_and_recreate_required = inheritance_status_changed or (
-                generated_status_changed and not can_drop_generated
+                generated_status_changed and not generated_status_removed
             )
 
             if drop_and_recreate_required:

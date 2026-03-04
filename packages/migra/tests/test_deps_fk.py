@@ -70,11 +70,6 @@ CREATE TRIGGER emp_stamp BEFORE INSERT OR UPDATE ON other.emp
 
 def test_dep_order(db):
     with connect(db) as s:
-        i = get_inspector(s)
-
-        if i.pg_version <= 10:
-            return
-
         # s.execute(CREATES)
         s.execute(CREATES_FK)
 
@@ -104,11 +99,6 @@ def test_dep_order(db):
 
 def test_fk_info(db):
     with connect(db) as s:
-        i = get_inspector(s)
-
-        if i.pg_version <= 10:
-            return
-
         s.execute(CREATES_FK)
 
         i = get_inspector(s)
@@ -130,21 +120,13 @@ FOREIGN KEY (d, c) REFERENCES x (b,a)
 
 def test_fk_col_order(db):
     with connect(db) as s:
-        i = get_inspector(s)
-
-        if i.pg_version <= 10:
-            return
-
         s.execute(TRICKY_ORDER)
 
         i = get_inspector(s)
 
         fk = [v for v in i.constraints.values() if v.is_fk][0]
 
-        if i.pg_version <= 11:
-            assert fk.signature == '"public"."y"."y_d_fkey"'
-        else:
-            assert fk.signature == '"public"."y"."y_d_c_fkey"'
+        assert fk.signature == '"public"."y"."y_d_c_fkey"'
 
         assert fk.is_fk is True
         assert fk.quoted_full_foreign_table_name == '"public"."x"'
@@ -155,11 +137,6 @@ def test_fk_col_order(db):
 
 def test_separate_validate(db):
     with connect(db) as s:
-        i = get_inspector(s)
-
-        if i.pg_version <= 10:
-            return
-
         s.execute(TRICKY_ORDER)
 
         i = get_inspector(s)

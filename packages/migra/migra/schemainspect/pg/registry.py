@@ -11,6 +11,7 @@ class ObjectType:
     name: str
     schema_filterable: bool = True
     include_in_eq: bool = True
+    min_pg_version: int = 14
 
 
 @dataclass

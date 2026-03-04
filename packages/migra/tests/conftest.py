@@ -50,19 +50,25 @@ def db(pg_admin):
     )
 
 
-def pytest_addoption(parser):
-    parser.addoption(
-        "--timescale", action="store_true", help="Test with Timescale extension"
-    )
+@pytest.fixture(scope="session")
+def pg_version(pg_admin):
+    return pg_admin.info.server_version // 10000
 
 
 def pytest_configure(config):
-    config.addinivalue_line("markers", "timescale: mark timescale specific tests")
+    config.addinivalue_line(
+        "markers", "requires_pg: mark tests requiring a minimum PG version"
+    )
 
 
-def pytest_collection_modifyitems(config, items):
-    skip_timescale = pytest.mark.skip(reason="need --timescale option to run")
-    if not config.getoption("--timescale", default=False):
-        for item in items:
-            if "timescale" in item.keywords:
-                item.add_marker(skip_timescale)
+def pytest_runtest_setup(item):
+    for marker in item.iter_markers("requires_pg"):
+        min_version = marker.kwargs.get("min_version", 14)
+        if not hasattr(item.config, "_pg_version"):
+            conn = psycopg.connect(_pg_url("postgres"))
+            item.config._pg_version = conn.info.server_version // 10000
+            conn.close()
+        if item.config._pg_version < min_version:
+            pytest.skip(
+                f"Requires PG {min_version}+, running {item.config._pg_version}"
+            )

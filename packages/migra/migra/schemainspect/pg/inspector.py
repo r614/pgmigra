@@ -39,7 +39,6 @@ def _read_sql(name: str) -> str:
 
 
 ALL_RELATIONS_QUERY = _read_sql("relations.sql")
-ALL_RELATIONS_QUERY_9 = _read_sql("relations9.sql")
 SCHEMAS_QUERY = _read_sql("schemas.sql")
 INDEXES_QUERY = _read_sql("indexes.sql")
 SEQUENCES_QUERY = _read_sql("sequences.sql")
@@ -53,7 +52,6 @@ DEPS_QUERY = _read_sql("deps.sql")
 PRIVILEGES_QUERY = _read_sql("privileges.sql")
 TRIGGERS_QUERY = _read_sql("triggers.sql")
 COLLATIONS_QUERY = _read_sql("collations.sql")
-COLLATIONS_QUERY_9 = _read_sql("collations9.sql")
 RLSPOLICIES_QUERY = _read_sql("rlspolicies.sql")
 COMMENTS_QUERY = _read_sql("comments.sql")
 ROLES_QUERY = _read_sql("roles.sql")
@@ -64,39 +62,29 @@ class PostgreSQL:
     def __init__(self, c, include_internal=False):
         self.pg_version = c.info.server_version // 10000
 
+        if self.pg_version < 14:
+            raise ValueError(
+                f"PostgreSQL {self.pg_version} is not supported. migra requires PostgreSQL 14 or later."
+            )
+
         def processed(q):
             if not include_internal:
                 q = q.replace("-- SKIP_INTERNAL", "")
-            if self.pg_version >= 11:
-                q = q.replace("-- 11_AND_LATER", "")
-            else:
-                q = q.replace("-- 10_AND_EARLIER", "")
             q = q.replace(r"\:", ":")
             return q
 
-        if self.pg_version <= 9:
-            self.ALL_RELATIONS_QUERY = processed(ALL_RELATIONS_QUERY_9)
-            self.COLLATIONS_QUERY = processed(COLLATIONS_QUERY_9)
-            self.RLSPOLICIES_QUERY = None
+        self.ALL_RELATIONS_QUERY = processed(ALL_RELATIONS_QUERY)
+
+        if self.pg_version >= 17:
+            lc_collate_expr = "coalesce(collcollate, colllocale)"
+        elif self.pg_version >= 15:
+            lc_collate_expr = "coalesce(collcollate, colliculocale)"
         else:
-            all_relations_query = ALL_RELATIONS_QUERY
-
-            if self.pg_version >= 12:
-                replace = "-- 12_ONLY"
-            else:
-                replace = "-- PRE_12"
-
-            all_relations_query = all_relations_query.replace(replace, "")
-            self.ALL_RELATIONS_QUERY = processed(all_relations_query)
-            collations_query = COLLATIONS_QUERY
-            if self.pg_version >= 17:
-                collations_query = collations_query.replace("-- 17_AND_LATER", "")
-            elif self.pg_version >= 15:
-                collations_query = collations_query.replace("-- 15_TO_16", "")
-            else:
-                collations_query = collations_query.replace("-- PRE_15", "")
-            self.COLLATIONS_QUERY = processed(collations_query)
-            self.RLSPOLICIES_QUERY = processed(RLSPOLICIES_QUERY)
+            lc_collate_expr = "collcollate"
+        self.COLLATIONS_QUERY = processed(
+            COLLATIONS_QUERY.format(lc_collate_expr=lc_collate_expr)
+        )
+        self.RLSPOLICIES_QUERY = processed(RLSPOLICIES_QUERY)
 
         self.INDEXES_QUERY = processed(INDEXES_QUERY)
         self.SEQUENCES_QUERY = processed(SEQUENCES_QUERY)
@@ -149,10 +137,6 @@ class PostgreSQL:
         self.schemas = {schema.schema: schema for schema in schemas}
 
     def load_rlspolicies(self):
-        if self.pg_version <= 9:
-            self.rlspolicies = {}
-            return
-
         q = self.execute(self.RLSPOLICIES_QUERY)
 
         rlspolicies = [
@@ -336,7 +320,6 @@ class PostgreSQL:
                 name=i.name,
                 schema=i.schema,
                 elements=i.elements,
-                pg_version=self.pg_version,
             )
             for i in q
         ]
@@ -371,7 +354,6 @@ class PostgreSQL:
                     is_identity=c.is_identity,
                     is_identity_always=c.is_identity_always,
                     is_generated=c.is_generated,
-                    can_drop_generated=self.pg_version >= 13,
                     generated_type=getattr(c, "generated_type", None),
                 )
                 for c in clist

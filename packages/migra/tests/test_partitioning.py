@@ -4,10 +4,6 @@ from migra.schemainspect import get_inspector
 
 def test_partitions(db):
     with connect(db) as s:
-        i = get_inspector(s)
-
-        if i.pg_version <= 9:
-            return
         s.execute(
             """
 CREATE TABLE measurement (
@@ -87,10 +83,6 @@ CREATE TABLE plain (id int);
 
 def test_inherit(db):
     with connect(db) as s:
-        i = get_inspector(s)
-
-        if i.pg_version <= 9:
-            return
         s.execute(
             """
 CREATE TABLE entity_bindings (

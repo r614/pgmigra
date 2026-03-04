@@ -8,9 +8,7 @@ select
   end
   as provider,
   collencoding as encoding,
-  -- PRE_15 collcollate as lc_collate,
-  -- 15_TO_16 coalesce(collcollate, colliculocale) as lc_collate,
-  -- 17_AND_LATER coalesce(collcollate, colllocale) as lc_collate,
+  {lc_collate_expr} as lc_collate,
   collctype as lc_ctype,
   collversion as version
 from

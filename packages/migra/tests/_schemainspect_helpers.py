@@ -186,7 +186,7 @@ def n(name, schema="public"):
     return quoted_identifier(name, schema=schema)
 
 
-def asserts_pg(i, has_timescale=False):
+def asserts_pg(i):
     # schemas
     assert list(i.schemas.keys()) == ["otherschema", "public"]
     otherschema = i.schemas["otherschema"]
@@ -268,8 +268,6 @@ def asserts_pg(i, has_timescale=False):
         n("plpgsql", schema="pg_catalog"),
         n("pg_trgm"),
     ]
-    if has_timescale:
-        ext.append(n("timescaledb"))
     assert [e.quoted_full_name for e in i.extensions.values()] == ext
 
     # constraints

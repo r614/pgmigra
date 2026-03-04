@@ -4,11 +4,6 @@ from migra.schemainspect import get_inspector
 
 def test_collations(db):
     with connect(db) as s:
-        i = get_inspector(s)
-
-        if i.pg_version <= 9:
-            return
-
         s.execute(
             """
 CREATE TABLE measurement (

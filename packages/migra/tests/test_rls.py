@@ -18,11 +18,6 @@ def create_role(s, rolename):
 
 def test_rls(db):
     with connect(db) as s:
-        i = get_inspector(s)
-
-        if i.pg_version <= 9:
-            return
-
         s.execute(
             """
 CREATE TABLE t(id uuid, a text, b decimal);

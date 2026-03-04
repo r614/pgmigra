@@ -10,8 +10,7 @@ with extension_oids as (
     pg_proc_pre as (
       select
         pp.*,
-        -- 11_AND_LATER pp.oid as p_oid
-        -- 10_AND_EARLIER pp.oid as p_oid, case when pp.proisagg then 'a' else 'f' end as prokind
+        pp.oid as p_oid
       from pg_proc pp
     ),
 routines as (
@@ -141,7 +140,7 @@ routines as (
           left outer join extension_oids e
             on p.oid = e.objid
       where true
-      -- 11_AND_LATER and p.kind != 'a'
+      and p.kind != 'a'
       -- SKIP_INTERNAL and schema not in ('pg_internal', 'pg_catalog', 'information_schema', 'pg_toast')
       -- SKIP_INTERNAL and schema not like 'pg_temp_%' and schema not like 'pg_toast_temp_%'
       -- SKIP_INTERNAL and e.objid is null

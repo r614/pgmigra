@@ -1,15 +1,9 @@
-import pytest
 from migra.db import connect
 from migra.schemainspect import get_inspector
 
 
 def test_identity_columns(db):
     with connect(db) as s:
-        i = get_inspector(s)
-
-        if i.pg_version < 10:
-            pytest.skip("identity columns not supported in 9")
-
         s.execute(
             """create table t(
             a int,

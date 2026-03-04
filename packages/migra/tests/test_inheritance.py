@@ -27,11 +27,6 @@ def test_inheritance(db):
 
         assert normal.columns["id"].is_inherited is False
         assert parent.columns["t"].is_inherited is False
-
-        if ii.pg_version <= 9:
-            return
-
-        # uncertain why this fails on <=pg9 only
         assert child.columns["t"].is_inherited is True
 
         for c in "a b".split():
@@ -43,10 +38,6 @@ def test_inheritance(db):
 
 def test_table_dependency_order(db):
     with connect(db) as s:
-        i = get_inspector(s)
-
-        if i.pg_version <= 9:
-            return
         s.execute(INHERITANCE)
 
         ii = get_inspector(s)

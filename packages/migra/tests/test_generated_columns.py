@@ -1,4 +1,3 @@
-import pytest
 from migra import Migration
 from migra.db import connect, temporary_database
 from migra.schemainspect import get_inspector
@@ -50,11 +49,6 @@ def test_generated_column_inspected():
 
 def test_generated_columns_inspect(db):
     with connect(db) as s:
-        i = get_inspector(s)
-
-        if i.pg_version < 12:
-            pytest.skip("generated columns not supported in < 12")
-
         s.execute(
             """create table t(
                 c int generated always as (1) stored

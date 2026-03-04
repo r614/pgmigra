@@ -4,11 +4,10 @@ from ..registry import ObjectType, register
 
 
 class InspectedEnum(Inspected):
-    def __init__(self, name, schema, elements, pg_version=None):
+    def __init__(self, name, schema, elements):
         self.name = name
         self.schema = schema
         self.elements = elements
-        self.pg_version = pg_version
         self.dependents = []
         self.dependent_on = []
 
@@ -55,12 +54,8 @@ class InspectedEnum(Inspected):
             previous = c
         return statements
 
-    def can_be_changed_to(self, new, when_within_transaction=False):
+    def can_be_changed_to(self, new):
         old = self.elements
-
-        if when_within_transaction and self.pg_version and self.pg_version < 12:
-            return False
-
         return [e for e in new.elements if e in old] == old
 
     def __eq__(self, other):

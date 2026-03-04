@@ -76,10 +76,6 @@ CREATE UNIQUE INDEX iii_exp ON s.t((lower(id::text)));
 
 def test_index_defs(db):
     with connect(db) as s:
-        ii = get_inspector(s)
-
-        if ii.pg_version <= 10:
-            return
         s.execute(INDEX_DEFS)
 
         ii = get_inspector(s)

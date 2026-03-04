@@ -157,7 +157,7 @@ def test_statistics_default_stattarget(db):
 
         key = '"public"."st_default"'
         stat = i.statistics[key]
-        assert stat.stattarget == -1
+        assert stat.stattarget in (-1, None)
         assert "SET STATISTICS" not in stat.create_statement
 
 

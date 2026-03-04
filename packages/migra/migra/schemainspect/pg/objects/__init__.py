@@ -4,6 +4,8 @@ from .constraint import InspectedConstraint
 from .domain import InspectedDomain
 from .enum import InspectedEnum
 from .extension import InspectedExtension
+from .fdw import InspectedFDW
+from .foreign_server import InspectedForeignServer
 from .index import InspectedIndex
 from .privilege import InspectedPrivilege
 from .publication import InspectedPublication
@@ -17,6 +19,7 @@ from .sequence import InspectedSequence
 from .statistics import InspectedStatistics
 from .trigger import InspectedTrigger
 from .type import InspectedType
+from .user_mapping import InspectedUserMapping
 
 __all__ = [
     "InspectedCollation",
@@ -25,6 +28,8 @@ __all__ = [
     "InspectedDomain",
     "InspectedEnum",
     "InspectedExtension",
+    "InspectedFDW",
+    "InspectedForeignServer",
     "InspectedFunction",
     "InspectedIndex",
     "InspectedPrivilege",
@@ -39,4 +44,5 @@ __all__ = [
     "InspectedStatistics",
     "InspectedTrigger",
     "InspectedType",
+    "InspectedUserMapping",
 ]

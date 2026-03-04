@@ -12,9 +12,13 @@ class InspectedStatistics(Inspected):
         self.definition = definition
 
     @property
+    def _has_custom_stattarget(self):
+        return self.stattarget is not None and self.stattarget != -1
+
+    @property
     def create_statement(self):
         stmt = self.definition + ";"
-        if self.stattarget != -1:
+        if self._has_custom_stattarget:
             stmt += f"\nALTER STATISTICS {self.quoted_full_name} SET STATISTICS {self.stattarget};"
         return stmt
 
@@ -28,7 +32,8 @@ class InspectedStatistics(Inspected):
             and self.schema == other.schema
             and self.table_schema == other.table_schema
             and self.table_name == other.table_name
-            and self.stattarget == other.stattarget
+            and self._has_custom_stattarget == other._has_custom_stattarget
+            and (not self._has_custom_stattarget or self.stattarget == other.stattarget)
             and self.definition == other.definition
         )
 

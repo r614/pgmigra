@@ -53,14 +53,20 @@ r as (
         c.relpersistence as persistence,
         c.relpages as page_size_estimate,
         c.reltuples as row_count_estimate,
-        pg_get_userbyid(c.relowner) as owner
+        pg_get_userbyid(c.relowner) as owner,
+        fs.srvname as ft_server_name,
+        array_to_string(ft.ftoptions, ', ') as ft_options
     from
         pg_catalog.pg_class c
         inner join pg_catalog.pg_namespace n
           ON n.oid = c.relnamespace
         left outer join extension_oids e
           on c.oid = e.objid
-    where c.relkind in ('r', 'v', 'm', 'c', 'p')
+        left join pg_foreign_table ft
+          on c.oid = ft.ftrelid
+        left join pg_foreign_server fs
+          on ft.ftserver = fs.oid
+    where c.relkind in ('r', 'v', 'm', 'c', 'p', 'f')
     -- SKIP_INTERNAL and e.objid is null
     -- SKIP_INTERNAL and n.nspname not in ('pg_catalog', 'information_schema', 'pg_toast')
     -- SKIP_INTERNAL and n.nspname not like 'pg_temp_%' and n.nspname not like 'pg_toast_temp_%'
@@ -94,7 +100,9 @@ select
     r.persistence,
     r.page_size_estimate,
     r.row_count_estimate,
-    r.owner
+    r.owner,
+    r.ft_server_name,
+    r.ft_options
 FROM
     r
     left join pg_catalog.pg_attribute a

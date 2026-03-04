@@ -12,6 +12,8 @@ from .objects import (
     InspectedDomain,
     InspectedEnum,
     InspectedExtension,
+    InspectedFDW,
+    InspectedForeignServer,
     InspectedFunction,
     InspectedIndex,
     InspectedPrivilege,
@@ -26,6 +28,7 @@ from .objects import (
     InspectedStatistics,
     InspectedTrigger,
     InspectedType,
+    InspectedUserMapping,
 )
 from .registry import COMPOUND_PROPS, REGISTRY
 
@@ -62,6 +65,9 @@ RANGE_TYPES_QUERY = _read_sql("range_types.sql")
 PUBLICATIONS_QUERY = _read_sql("publications.sql")
 RULES_QUERY = _read_sql("rules.sql")
 STATISTICS_QUERY = _read_sql("statistics.sql")
+FDWS_QUERY = _read_sql("fdws.sql")
+FOREIGN_SERVERS_QUERY = _read_sql("foreign_servers.sql")
+USER_MAPPINGS_QUERY = _read_sql("user_mappings.sql")
 
 
 class PostgreSQL:
@@ -110,6 +116,9 @@ class PostgreSQL:
         self.PUBLICATIONS_QUERY = processed(PUBLICATIONS_QUERY)
         self.RULES_QUERY = processed(RULES_QUERY)
         self.STATISTICS_QUERY = processed(STATISTICS_QUERY)
+        self.FDWS_QUERY = processed(FDWS_QUERY)
+        self.FOREIGN_SERVERS_QUERY = processed(FOREIGN_SERVERS_QUERY)
+        self.USER_MAPPINGS_QUERY = processed(USER_MAPPINGS_QUERY)
 
         self.c = c
         self.include_internal = include_internal
@@ -139,6 +148,9 @@ class PostgreSQL:
         self.load_publications()
         self.load_rules()
         self.load_statistics()
+        self.load_fdws()
+        self.load_foreign_servers()
+        self.load_user_mappings()
 
         self.load_deps()
         self.load_deps_all()
@@ -192,6 +204,7 @@ class PostgreSQL:
                 name=i.name,
                 privilege=i.privilege,
                 target_user=i.user,
+                columns=getattr(i, "columns", None),
             )
             for i in q
         ]
@@ -325,6 +338,7 @@ class PostgreSQL:
         self.views = {}
         self.materialized_views = {}
         self.composite_types = {}
+        self.foreign_tables = {}
 
         q = self.execute(self.ENUMS_QUERY)
         enumlist = [
@@ -372,11 +386,17 @@ class PostgreSQL:
                 if c.position_number
             ]
 
+            relationtype = f.relationtype
+            ft_server_name = getattr(f, "ft_server_name", None)
+            ft_options = getattr(f, "ft_options", None)
+            if relationtype == "f":
+                relationtype = "ft"
+
             s = InspectedSelectable(
                 name=f.name,
                 schema=f.schema,
                 columns={c.name: c for c in columns},
-                relationtype=f.relationtype,
+                relationtype=relationtype,
                 definition=f.definition,
                 comment=f.comment,
                 parent_table=f.parent_table,
@@ -385,6 +405,8 @@ class PostgreSQL:
                 forcerowsecurity=f.forcerowsecurity,
                 persistence=f.persistence,
                 owner=f.owner,
+                ft_server_name=ft_server_name,
+                ft_options=ft_options,
             )
             RELATIONTYPES = {
                 "r": "tables",
@@ -392,8 +414,9 @@ class PostgreSQL:
                 "m": "materialized_views",
                 "c": "composite_types",
                 "p": "tables",
+                "ft": "foreign_tables",
             }
-            att = getattr(self, RELATIONTYPES[f.relationtype])
+            att = getattr(self, RELATIONTYPES[relationtype])
             att[s.quoted_full_name] = s
 
         for k, t in self.tables.items():
@@ -404,7 +427,12 @@ class PostgreSQL:
                         c.is_inherited = True
 
         self.relations = {}
-        for x in (self.tables, self.views, self.materialized_views):
+        for x in (
+            self.tables,
+            self.views,
+            self.materialized_views,
+            self.foreign_tables,
+        ):
             self.relations.update(x)
         q = self.execute(self.INDEXES_QUERY)
         indexlist = [
@@ -691,6 +719,49 @@ class PostgreSQL:
             for i in q
         ]
         self.statistics = {s.quoted_full_name: s for s in statistics}
+
+    def load_fdws(self):
+        q = self.execute(self.FDWS_QUERY)
+        fdws = [
+            InspectedFDW(
+                name=i.name,
+                owner=i.owner,
+                handler_name=i.handler_name,
+                handler_schema=i.handler_schema,
+                validator_name=i.validator_name,
+                validator_schema=i.validator_schema,
+                options=i.options,
+            )
+            for i in q
+        ]
+        self.fdws = {f.quoted_full_name: f for f in fdws}
+
+    def load_foreign_servers(self):
+        q = self.execute(self.FOREIGN_SERVERS_QUERY)
+        servers = [
+            InspectedForeignServer(
+                name=i.name,
+                fdw_name=i.fdw_name,
+                owner=i.owner,
+                server_type=i.server_type,
+                server_version=i.server_version,
+                options=i.options,
+            )
+            for i in q
+        ]
+        self.foreign_servers = {s.quoted_full_name: s for s in servers}
+
+    def load_user_mappings(self):
+        q = self.execute(self.USER_MAPPINGS_QUERY)
+        mappings = [
+            InspectedUserMapping(
+                server_name=i.server_name,
+                user_name=i.user_name,
+                options=getattr(i, "options", None),
+            )
+            for i in q
+        ]
+        self.user_mappings = {m.key: m for m in mappings}
 
     def _filterable_props(self):
         return _FILTERABLE_PROPS

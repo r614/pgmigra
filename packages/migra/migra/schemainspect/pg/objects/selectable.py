@@ -1,6 +1,17 @@
 from ...inspected import Inspected
 
 
+def _format_ft_options(options_str):
+    parts = []
+    for opt in options_str.split(", "):
+        if "=" in opt:
+            k, v = opt.split("=", 1)
+            parts.append(f"{k} '{v}'")
+        else:
+            parts.append(opt)
+    return ", ".join(parts)
+
+
 class InspectedSelectable(Inspected):
     def __init__(
         self,
@@ -20,6 +31,8 @@ class InspectedSelectable(Inspected):
         forcerowsecurity=False,
         persistence=None,
         owner=None,
+        ft_server_name=None,
+        ft_options=None,
     ):
         self.name = name
         self.schema = schema
@@ -41,6 +54,8 @@ class InspectedSelectable(Inspected):
         self.forcerowsecurity = forcerowsecurity
         self.persistence = persistence
         self.owner = owner
+        self.ft_server_name = ft_server_name
+        self.ft_options = ft_options
 
     def __eq__(self, other):
         equalities = (
@@ -55,6 +70,8 @@ class InspectedSelectable(Inspected):
             self.partition_def == other.partition_def,
             self.rowsecurity == other.rowsecurity,
             self.persistence == other.persistence,
+            self.ft_server_name == other.ft_server_name,
+            self.ft_options == other.ft_options,
         )
         return all(equalities)
 
@@ -126,6 +143,20 @@ class InspectedSelectable(Inspected):
         elif self.relationtype == "c":
             colspec = ", ".join(c.creation_clause for c in self.columns.values())
             create_statement = f"create type {n} as ({colspec});"
+        elif self.relationtype == "ft":
+            colspec = ",\n".join(
+                "    " + c.creation_clause for c in self.columns.values()
+            )
+            if colspec:
+                colspec = "\n" + colspec
+            server_clause = (
+                f" server {self.ft_server_name}" if self.ft_server_name else ""
+            )
+            options_clause = ""
+            if self.ft_options:
+                opts = _format_ft_options(self.ft_options)
+                options_clause = f" options ({opts})"
+            create_statement = f"create foreign table {n} ({colspec}\n){server_clause}{options_clause};\n"
         else:
             raise NotImplementedError  # pragma: no cover
         return create_statement
@@ -141,6 +172,8 @@ class InspectedSelectable(Inspected):
             drop_statement = f"drop materialized view if exists {n};"
         elif self.relationtype == "c":
             drop_statement = f"drop type {n};"
+        elif self.relationtype == "ft":
+            drop_statement = f"drop foreign table if exists {n};"
         else:
             raise NotImplementedError  # pragma: no cover
 

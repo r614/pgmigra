@@ -25,13 +25,23 @@ class DiffStep:
 
 REGISTRY: dict[str, ObjectType] = {}
 
-COMPOUND_PROPS = ["relations", "tables", "views", "functions", "selectables"]
+COMPOUND_PROPS = [
+    "relations",
+    "tables",
+    "views",
+    "functions",
+    "selectables",
+    "foreign_tables",
+]
 
 DIFF_STEPS: list[DiffStep] = [
     DiffStep("roles", {"creations_only": True}, condition="roles"),
     DiffStep("schemas", {"creations_only": True}),
     DiffStep("extensions", {"creations_only": True, "modifications": False}),
     DiffStep("extensions", {"modifications_only": True, "modifications": True}),
+    DiffStep("fdws", {"creations_only": True}),
+    DiffStep("foreign_servers", {"creations_only": True}),
+    DiffStep("user_mappings", {"creations_only": True}),
     DiffStep("publications", {"creations_only": True}),
     DiffStep("collations", {"creations_only": True}),
     DiffStep("enums", {"creations_only": True, "modifications": False}),
@@ -69,6 +79,9 @@ DIFF_STEPS: list[DiffStep] = [
     DiffStep("comments", {"creations_only": True}),
     DiffStep("collations", {"drops_only": True}),
     DiffStep("publications", {"drops_only": True}),
+    DiffStep("user_mappings", {"drops_only": True}),
+    DiffStep("foreign_servers", {"drops_only": True}),
+    DiffStep("fdws", {"drops_only": True}),
     DiffStep("roles", {"drops_only": True}, condition="roles"),
     DiffStep("schemas", {"drops_only": True}),
 ]

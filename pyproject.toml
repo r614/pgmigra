@@ -6,12 +6,19 @@ authors = [{ name = "Roshan Pawar", email = "roshan@r614.dev" }]
 
 [dependency-groups]
 dev = [
+    "migra",
     "pytest",
     "pytest-cov",
     "psycopg[binary]",
     "ruff",
     "ty",
 ]
+
+[tool.uv.workspace]
+members = ["packages/migra"]
+
+[tool.uv.sources]
+migra = { workspace = true }
 
 [tool.ruff]
 line-length = 88

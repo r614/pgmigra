@@ -38,7 +38,7 @@ def parse_args(args: list[str]) -> argparse.Namespace:
         help="Restrict output to statements for a particular schema",
     )
     parser.add_argument(
-        "--exclude_schema",
+        "--exclude-schema",
         dest="exclude_schema",
         default=None,
         help="Restrict output to statements for all schemas except the specified schema",

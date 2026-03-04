@@ -123,7 +123,7 @@ def do_fixture_test(
     if schema:
         flags += ["--schema", schema]
     if exclude_schema:
-        flags += ["--exclude_schema", exclude_schema]
+        flags += ["--exclude-schema", exclude_schema]
     if create_extensions_only:
         flags += ["--create-extensions-only"]
     if ignore_extension_versions:

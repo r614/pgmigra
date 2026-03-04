@@ -25,4 +25,4 @@ $$
 LANGUAGE PLPGSQL STABLE returns null on null input security definer;
 
 
-grant update, insert on table any_table to postgres;
+grant update, insert on table any_table to schemainspect_test_role;

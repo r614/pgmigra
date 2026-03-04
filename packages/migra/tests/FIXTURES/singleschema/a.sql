@@ -12,4 +12,4 @@ create index on goodschema.t(id);
 
 create view goodschema.v as select 1 AS a;
 
-grant select on table t to postgres;
+grant select on table t to schemainspect_test_role;

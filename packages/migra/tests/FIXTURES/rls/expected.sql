@@ -1,6 +1,6 @@
-drop policy "account_managers" on "public"."accounts";
-
 alter table "public"."accounts2" enable row level security;
+
+drop policy "account_managers" on "public"."accounts";
 
 create policy "account_managers"
 on "public"."accounts"

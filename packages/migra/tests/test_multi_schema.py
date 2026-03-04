@@ -5,7 +5,9 @@ from migra.db import connect, temporary_database
 
 def test_multiple_schemas_cli():
     """Verify --schema can be specified multiple times."""
-    args = parse_args(["--schema", "s1", "--schema", "s2", "--unsafe", "EMPTY", "EMPTY"])
+    args = parse_args(
+        ["--schema", "s1", "--schema", "s2", "--unsafe", "EMPTY", "EMPTY"]
+    )
     assert args.schema == ["s1", "s2"]
 
 
@@ -27,7 +29,9 @@ def test_multiple_schemas_migration():
             assert "app" in sql_out, f"Schema 'app' not in output.\n{sql_out}"
             assert "api" in sql_out, f"Schema 'api' not in output.\n{sql_out}"
             assert "users" in sql_out, f"Table 'users' not in output.\n{sql_out}"
-            assert "endpoints" in sql_out, f"Table 'endpoints' not in output.\n{sql_out}"
+            assert "endpoints" in sql_out, (
+                f"Table 'endpoints' not in output.\n{sql_out}"
+            )
 
 
 def test_single_schema_backward_compat():

@@ -6,7 +6,9 @@ import psycopg
 
 from .changes import Changes
 from .db import execute
-from .schemainspect import DBInspector, get_inspector
+from .schemainspect import get_inspector
+from .schemainspect.pg import PostgreSQL
+from .schemainspect.pg.registry import DIFF_STEPS
 from .statements import Statements
 
 
@@ -17,8 +19,8 @@ class Migration:
 
     def __init__(
         self,
-        x_from: DBInspector | psycopg.Connection[Any] | None,
-        x_target: DBInspector | psycopg.Connection[Any] | None,
+        x_from: PostgreSQL | psycopg.Connection[Any] | None,
+        x_target: PostgreSQL | psycopg.Connection[Any] | None,
         schema: str | list[str] | None = None,
         exclude_schema: str | None = None,
         ignore_extension_versions: bool = False,
@@ -29,7 +31,7 @@ class Migration:
             raise ValueError("You cannot have both a schema and excluded schema")
         self.schema = schema
         self.exclude_schema = exclude_schema
-        if isinstance(x_from, DBInspector):
+        if isinstance(x_from, PostgreSQL):
             self.changes.i_from = x_from
         else:
             self.changes.i_from = get_inspector(
@@ -37,7 +39,7 @@ class Migration:
             )
             if x_from:
                 self.s_from = x_from
-        if isinstance(x_target, DBInspector):
+        if isinstance(x_target, PostgreSQL):
             self.changes.i_target = x_target
         else:
             self.changes.i_target = get_inspector(
@@ -92,57 +94,17 @@ class Migration:
         concurrent_indexes: bool = False,
         roles: bool = False,
     ) -> None:
-        if roles:
-            self.add(self.changes.roles(creations_only=True))
-
-        self.add(self.changes.schemas(creations_only=True))
-
-        self.add(self.changes.extensions(creations_only=True, modifications=False))
-        self.add(self.changes.extensions(modifications_only=True, modifications=True))
-        self.add(self.changes.collations(creations_only=True))
-        self.add(self.changes.enums(creations_only=True, modifications=False))
-        self.add(self.changes.domains(creations_only=True))
-        self.add(self.changes.range_types(creations_only=True))
-        self.add(self.changes.sequences(creations_only=True))
-        self.add(self.changes.triggers(drops_only=True))
-        self.add(self.changes.rlspolicies(drops_only=True, modifications=False))
+        conditions: dict[str, bool] = {}
         if privileges:
-            self.add(self.changes.privileges(drops_only=True))
-        self.add(self.changes.non_pk_constraints(drops_only=True))
-
-        self.add(self.changes.comments(drops_only=True))
-        self.add(self.changes.mv_indexes(drops_only=True))
-        self.add(self.changes.non_table_selectable_drops())
-
-        self.add(self.changes.pk_constraints(drops_only=True))
-        self.add(self.changes.non_mv_indexes(drops_only=True))
-
-        self.add(self.changes.tables_only_selectables())
-
-        self.add(self.changes.sequences(drops_only=True))
-        self.add(self.changes.range_types(drops_only=True))
-        self.add(self.changes.domains(drops_only=True))
-        self.add(self.changes.enums(drops_only=True, modifications=False))
-        self.add(self.changes.extensions(drops_only=True, modifications=False))
-        self.add(self.changes.non_mv_indexes(creations_only=True))
-        self.add(self.changes.pk_constraints(creations_only=True))
-        self.add(self.changes.non_pk_constraints(creations_only=True))
-
-        self.add(self.changes.non_table_selectable_creations())
-        self.add(self.changes.mv_indexes(creations_only=True))
-
-        if privileges:
-            self.add(self.changes.privileges(creations_only=True))
-        self.add(self.changes.rlspolicies(modifications_only=True))
-        self.add(self.changes.rlspolicies(creations_only=True, modifications=False))
-        self.add(self.changes.triggers(creations_only=True))
-        self.add(self.changes.comments(creations_only=True))
-        self.add(self.changes.collations(drops_only=True))
-
+            conditions["privileges"] = True
         if roles:
-            self.add(self.changes.roles(drops_only=True))
+            conditions["roles"] = True
 
-        self.add(self.changes.schemas(drops_only=True))
+        for step in DIFF_STEPS:
+            if step.condition and not conditions.get(step.condition):
+                continue
+            change_fn = getattr(self.changes, step.name)
+            self.add(change_fn(**step.kwargs))
 
         if concurrent_indexes:
             new_stmts = Statements()

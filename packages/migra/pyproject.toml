@@ -21,7 +21,6 @@ classifiers = [
 ]
 dependencies = [
     "psycopg[binary]",
-    "pyyaml",
 ]
 
 [project.urls]
@@ -30,7 +29,6 @@ Issues = "https://github.com/r614/migra/issues"
 
 [project.scripts]
 migra = "migra:do_command"
-schemainspect = "migra.schemainspect:do_command"
 
 [build-system]
 requires = ["hatchling"]

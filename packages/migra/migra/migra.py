@@ -6,7 +6,8 @@ import psycopg
 
 from .changes import Changes
 from .db import execute
-from .schemainspect import DBInspector, get_inspector
+from .schemainspect import get_inspector
+from .schemainspect.pg import PostgreSQL
 from .schemainspect.pg.registry import DIFF_STEPS
 from .statements import Statements
 
@@ -18,8 +19,8 @@ class Migration:
 
     def __init__(
         self,
-        x_from: DBInspector | psycopg.Connection[Any] | None,
-        x_target: DBInspector | psycopg.Connection[Any] | None,
+        x_from: PostgreSQL | psycopg.Connection[Any] | None,
+        x_target: PostgreSQL | psycopg.Connection[Any] | None,
         schema: str | list[str] | None = None,
         exclude_schema: str | None = None,
         ignore_extension_versions: bool = False,
@@ -30,7 +31,7 @@ class Migration:
             raise ValueError("You cannot have both a schema and excluded schema")
         self.schema = schema
         self.exclude_schema = exclude_schema
-        if isinstance(x_from, DBInspector):
+        if isinstance(x_from, PostgreSQL):
             self.changes.i_from = x_from
         else:
             self.changes.i_from = get_inspector(
@@ -38,7 +39,7 @@ class Migration:
             )
             if x_from:
                 self.s_from = x_from
-        if isinstance(x_target, DBInspector):
+        if isinstance(x_target, PostgreSQL):
             self.changes.i_target = x_target
         else:
             self.changes.i_target = get_inspector(

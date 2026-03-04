@@ -3,7 +3,6 @@ from .command import do_command
 from .migra import Migration
 from .schemainspect import (
     ColumnInfo,
-    DBInspector,
     Inspected,
     NullInspector,
     get_inspector,
@@ -17,7 +16,6 @@ __all__ = [
     "Statements",
     "UnsafeMigrationException",
     "do_command",
-    "DBInspector",
     "ColumnInfo",
     "Inspected",
     "NullInspector",

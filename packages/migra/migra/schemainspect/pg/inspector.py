@@ -1,12 +1,9 @@
 from graphlib import TopologicalSorter
 from importlib import resources
-from io import StringIO
 from itertools import groupby
 
-import yaml
-
-from ..inspected import ColumnInfo, Inspected
-from ..inspector import DBInspector
+from ..inspected import ColumnInfo
+from ..inspector import to_pytype
 from ..misc import quoted_identifier
 from .objects import (
     InspectedCollation,
@@ -63,7 +60,7 @@ ROLES_QUERY = _read_sql("roles.sql")
 RANGE_TYPES_QUERY = _read_sql("range_types.sql")
 
 
-class PostgreSQL(DBInspector):
+class PostgreSQL:
     def __init__(self, c, include_internal=False):
         self.pg_version = c.info.server_version // 10000
 
@@ -117,7 +114,9 @@ class PostgreSQL(DBInspector):
         self.ROLES_QUERY = processed(ROLES_QUERY)
         self.RANGE_TYPES_QUERY = processed(RANGE_TYPES_QUERY)
 
-        super().__init__(c, include_internal)
+        self.c = c
+        self.include_internal = include_internal
+        self.load_all()
 
     def execute(self, q):
         return self.c.execute(q).fetchall()
@@ -325,30 +324,6 @@ class PostgreSQL(DBInspector):
             ordering.reverse()
         return ordering
 
-    @property
-    def partitioned_tables(self):
-        return {k: v for k, v in self.tables.items() if v.is_partitioned}
-
-    @property
-    def alterable_tables(self):
-        return {k: v for k, v in self.tables.items() if v.is_alterable}
-
-    @property
-    def data_tables(self):
-        return {k: v for k, v in self.tables.items() if v.contains_data}
-
-    @property
-    def partitioning_child_tables(self):
-        return {k: v for k, v in self.tables.items() if v.is_partitioning_child_table}
-
-    @property
-    def tables_using_partitioning(self):
-        return {k: v for k, v in self.tables.items() if v.uses_partitioning}
-
-    @property
-    def tables_not_using_partitioning(self):
-        return {k: v for k, v in self.tables.items() if not v.uses_partitioning}
-
     def load_all_relations(self):
         self.tables = {}
         self.views = {}
@@ -387,7 +362,7 @@ class PostgreSQL(DBInspector):
                     name=c.attname,
                     dbtype=c.datatype,
                     dbtypestr=c.datatypestring,
-                    pytype=self.to_pytype(c.datatype),
+                    pytype=to_pytype(c.datatype),
                     default=c.defaultdef,
                     not_null=c.not_null,
                     is_enum=c.is_enum,
@@ -538,7 +513,7 @@ class PostgreSQL(DBInspector):
                     ColumnInfo(
                         name=c.parameter_name,
                         dbtype=c.data_type,
-                        pytype=self.to_pytype(c.data_type),
+                        pytype=to_pytype(c.data_type),
                     )
                     for c in outs
                 ]
@@ -547,7 +522,7 @@ class PostgreSQL(DBInspector):
                     ColumnInfo(
                         name=f.name,
                         dbtype=f.data_type,
-                        pytype=self.to_pytype(f.returntype),
+                        pytype=to_pytype(f.returntype),
                         default=f.parameter_default,
                     )
                 ]
@@ -555,7 +530,7 @@ class PostgreSQL(DBInspector):
                 ColumnInfo(
                     name=c.parameter_name,
                     dbtype=c.data_type,
-                    pytype=self.to_pytype(c.data_type),
+                    pytype=to_pytype(c.data_type),
                     default=c.parameter_default,
                 )
                 for c in clist
@@ -700,56 +675,6 @@ class PostgreSQL(DBInspector):
             att = getattr(self, prop)
             filtered = {k: v for k, v in att.items() if comparator(v)}
             setattr(self, prop, filtered)
-
-    def _as_dicts(self):
-        done = set()
-
-        def obj_to_d(x, k=None):
-            if id(x) in done:
-                if isinstance(x, (str, bool, int)):
-                    return x
-                elif hasattr(x, "quoted_full_name"):
-                    return x.quoted_full_name
-                return "..."
-            done.add(id(x))
-
-            if isinstance(x, dict):
-                return {k: obj_to_d(v, k) for k, v in x.items()}
-
-            elif isinstance(x, (ColumnInfo, Inspected)):
-
-                def safe_getattr(x, k):
-                    try:
-                        return getattr(x, k)
-                    except NotImplementedError:
-                        return "NOT IMPLEMENTED"
-
-                return {
-                    k: obj_to_d(safe_getattr(x, k), k)
-                    for k in dir(x)
-                    if not k.startswith("_") and not callable(safe_getattr(x, k))
-                }
-            else:
-                return str(x)
-
-        d = {}
-
-        for prop in self._filterable_props():
-            att = getattr(self, prop)
-
-            _d = {k: obj_to_d(v) for k, v in att.items()}
-
-            d[prop] = _d
-
-        return d
-
-    def encodeable_definition(self):
-        return self._as_dicts()
-
-    def as_yaml(self):
-        s = StringIO()
-        yaml.safe_dump(self.encodeable_definition(), s)
-        return s.getvalue()
 
     def one_schema(self, schema):
         self.filter_schema(schema=schema)

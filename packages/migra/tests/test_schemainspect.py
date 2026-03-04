@@ -44,7 +44,6 @@ def test_inspected():
     x.name = "b"
     x.schema = "a"
     assert x.quoted_full_name == '"a"."b"'
-    assert x.unquoted_full_name == "a.b"
     x = schemainspect.ColumnInfo(name="a", dbtype="integer", pytype=int)
     assert x.creation_clause == '"a" integer'
     x.default = "5"

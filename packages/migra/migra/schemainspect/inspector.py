@@ -84,28 +84,11 @@ PG_TYPE_MAP: dict[str, type[Any]] = {
 }
 
 
-class PGDialect:
-    name = "postgresql"
-
-
-def to_pytype(dialect: PGDialect, typename: str) -> type[Any]:
+def to_pytype(typename: str) -> type[Any]:
     return PG_TYPE_MAP.get(typename, type(None))
 
 
-class DBInspector:
-    def __init__(self, c: Any, include_internal: bool = False) -> None:
-        self.c = c
-        self.dialect = PGDialect()
-        self.include_internal = include_internal
-        self.load_all()
-
-    def load_all(self) -> None: ...
-
-    def to_pytype(self, typename: str) -> type[Any]:
-        return to_pytype(self.dialect, typename)
-
-
-class NullInspector(DBInspector):
+class NullInspector:
     def __init__(self) -> None:
         pass
 

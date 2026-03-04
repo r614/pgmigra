@@ -1,7 +1,63 @@
-from ...inspected import InspectedSelectable as BaseInspectedSelectable
+from ...inspected import Inspected
 
 
-class InspectedSelectable(BaseInspectedSelectable):
+class InspectedSelectable(Inspected):
+    def __init__(
+        self,
+        name,
+        schema,
+        columns,
+        inputs=None,
+        definition=None,
+        dependent_on=None,
+        dependents=None,
+        comment=None,
+        relationtype="unknown",
+        parent_table=None,
+        partition_def=None,
+        partition_spec=None,
+        rowsecurity=False,
+        forcerowsecurity=False,
+        persistence=None,
+        owner=None,
+    ):
+        self.name = name
+        self.schema = schema
+        self.inputs = inputs or []
+        self.columns = columns
+        self.definition = definition
+        self.relationtype = relationtype
+        self.dependent_on = dependent_on or []
+        self.dependents = dependents or []
+        self.dependent_on_all = []
+        self.dependents_all = []
+        self.constraints = {}
+        self.indexes = {}
+        self.comment = comment
+        self.parent_table = parent_table
+        self.partition_def = partition_def
+        self.partition_spec = partition_spec
+        self.rowsecurity = rowsecurity
+        self.forcerowsecurity = forcerowsecurity
+        self.persistence = persistence
+        self.owner = owner
+
+    def __eq__(self, other):
+        equalities = (
+            type(self) == type(other),
+            self.relationtype == other.relationtype,
+            self.name == other.name,
+            self.schema == other.schema,
+            dict(self.columns) == dict(other.columns),
+            self.inputs == other.inputs,
+            self.definition == other.definition,
+            self.parent_table == other.parent_table,
+            self.partition_def == other.partition_def,
+            self.rowsecurity == other.rowsecurity,
+            self.persistence == other.persistence,
+        )
+        return all(equalities)
+
     def has_compatible_columns(self, other):
         def names_and_types(cols):
             return [(k, c.dbtype) for k, c in cols.items()]
@@ -121,10 +177,6 @@ class InspectedSelectable(BaseInspectedSelectable):
         return bool(
             self.relationtype == "r" and (self.parent_table or not self.partition_def)
         )
-
-    @property
-    def is_child_table(self):
-        return self.is_partitioning_child_table
 
     @property
     def is_partitioning_child_table(self):

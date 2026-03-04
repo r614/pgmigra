@@ -195,11 +195,8 @@ def asserts_pg(i, has_timescale=False):
     assert otherschema.drop_statement == 'drop schema if exists "otherschema";'
 
     # to_pytype
-    assert to_pytype(i.dialect, "integer") == int
-    assert to_pytype(i.dialect, "nonexistent") == type(None)  # noqa
-
-    # dialect
-    assert i.dialect.name == "postgresql"
+    assert to_pytype("integer") == int
+    assert to_pytype("nonexistent") == type(None)  # noqa
 
     # tables and views
     films = n("films")

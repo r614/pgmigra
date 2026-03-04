@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from .misc import AutoRepr, quoted_identifier, unquoted_identifier
+from .misc import quoted_identifier
 
 
-class Inspected(AutoRepr):
+class Inspected:
     name: str
     schema: str
     dependents: list[str]
@@ -16,10 +16,6 @@ class Inspected(AutoRepr):
     @property
     def signature(self) -> str:
         return self.quoted_full_name
-
-    @property
-    def unquoted_full_name(self) -> str:
-        return unquoted_identifier(self.name, schema=self.schema)
 
     @property
     def quoted_name(self) -> str:
@@ -50,7 +46,7 @@ class TableRelated:
         return f"{quoted_identifier(self.schema)}.{quoted_identifier(self.table_name)}"
 
 
-class ColumnInfo(AutoRepr):
+class ColumnInfo:
     def __init__(
         self,
         name,
@@ -114,9 +110,6 @@ class ColumnInfo(AutoRepr):
         notnull_dropped = notnull_changed and not self.not_null
 
         default_changed = self.default != other.default
-
-        # default_added = default_changed and self.default
-        # default_dropped = default_changed and not self.default
 
         identity_changed = (
             self.is_identity != other.is_identity
@@ -252,61 +245,3 @@ class ColumnInfo(AutoRepr):
     @property
     def alter_enum_type_clause(self):
         return f"alter column {self.quoted_name} set data type {self.dbtypestr}{self.collation_subclause} using {self.quoted_name}::text::{self.dbtypestr}"
-
-
-class InspectedSelectable(Inspected):
-    def __init__(
-        self,
-        name,
-        schema,
-        columns,
-        inputs=None,
-        definition=None,
-        dependent_on=None,
-        dependents=None,
-        comment=None,
-        relationtype="unknown",
-        parent_table=None,
-        partition_def=None,
-        partition_spec=None,
-        rowsecurity=False,
-        forcerowsecurity=False,
-        persistence=None,
-        owner=None,
-    ):
-        self.name = name
-        self.schema = schema
-        self.inputs = inputs or []
-        self.columns = columns
-        self.definition = definition
-        self.relationtype = relationtype
-        self.dependent_on = dependent_on or []
-        self.dependents = dependents or []
-        self.dependent_on_all = []
-        self.dependents_all = []
-        self.constraints = {}
-        self.indexes = {}
-        self.comment = comment
-        self.parent_table = parent_table
-        self.partition_def = partition_def
-        self.partition_spec = partition_spec
-        self.rowsecurity = rowsecurity
-        self.forcerowsecurity = forcerowsecurity
-        self.persistence = persistence
-        self.owner = owner
-
-    def __eq__(self, other):
-        equalities = (
-            type(self) == type(other),
-            self.relationtype == other.relationtype,
-            self.name == other.name,
-            self.schema == other.schema,
-            dict(self.columns) == dict(other.columns),
-            self.inputs == other.inputs,
-            self.definition == other.definition,
-            self.parent_table == other.parent_table,
-            self.partition_def == other.partition_def,
-            self.rowsecurity == other.rowsecurity,
-            self.persistence == other.persistence,
-        )
-        return all(equalities)

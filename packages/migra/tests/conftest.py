@@ -45,7 +45,9 @@ def db(pg_admin):
     dbname = f"test_{uuid4().hex[:12]}"
     pg_admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(dbname)))
     yield _pg_url(dbname)
-    pg_admin.execute(sql.SQL("DROP DATABASE IF EXISTS {}").format(sql.Identifier(dbname)))
+    pg_admin.execute(
+        sql.SQL("DROP DATABASE IF EXISTS {}").format(sql.Identifier(dbname))
+    )
 
 
 def pytest_addoption(parser):

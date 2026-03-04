@@ -1185,7 +1185,7 @@ class PostgreSQL(DBInspector):
         enums=True,
         include_fk_deps=False,
     ):
-        from schemainspect import TopologicalSorter
+        from graphlib import TopologicalSorter
 
         graph, things = {}, {}
 

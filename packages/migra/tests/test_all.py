@@ -465,10 +465,18 @@ def asserts_pg(i, has_timescale=False):
     assert n("films_title_idx") in t.indexes
 
     # privileges
-    g = InspectedPrivilege("table", "public", "films", "select", "schemainspect_test_role")
+    g = InspectedPrivilege(
+        "table", "public", "films", "select", "schemainspect_test_role"
+    )
     g = i.privileges[g.key]
-    assert g.create_statement == f'grant select on table {t_films} to "schemainspect_test_role";'
-    assert g.drop_statement == f'revoke select on table {t_films} from "schemainspect_test_role";'
+    assert (
+        g.create_statement
+        == f'grant select on table {t_films} to "schemainspect_test_role";'
+    )
+    assert (
+        g.drop_statement
+        == f'revoke select on table {t_films} from "schemainspect_test_role";'
+    )
 
     # composite types
     ct = i.composite_types[n("ttt")]

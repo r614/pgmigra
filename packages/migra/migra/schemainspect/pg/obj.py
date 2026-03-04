@@ -288,6 +288,15 @@ class InspectedFunction(InspectedSelectable):
             and self.kind == other.kind
         )
 
+    def can_replace(self, other):
+        if self.signature != other.signature:
+            return False
+        if self.relationtype != other.relationtype:
+            return False
+        if self.result_string != other.result_string:
+            return False
+        return self.has_compatible_columns(other)
+
 
 class InspectedTrigger(Inspected):
     def __init__(

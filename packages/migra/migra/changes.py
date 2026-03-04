@@ -569,6 +569,17 @@ def get_selectable_changes(
                 dependency_ordering=True,
                 old=selectables_from,
             )
+
+            for k in list(added_other) + list(modified_other):
+                if k in selectables_target:
+                    new = selectables_target[k]
+                    if k in selectables_from:
+                        old = selectables_from[k]
+                        if hasattr(new, 'owner') and hasattr(old, 'owner') and new.owner and old.owner and new.owner != old.owner:
+                            if new.relationtype == 'v':
+                                statements.append(f"alter view {new.quoted_full_name} owner to {quoted_identifier(new.owner)};")
+                            elif new.relationtype == 'm':
+                                statements.append(f"alter materialized view {new.quoted_full_name} owner to {quoted_identifier(new.owner)};")
     return statements
 
 

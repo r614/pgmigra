@@ -10,7 +10,7 @@ create sequence "public"."bug_id_seq";
 
 create sequence "public"."products_product_no_seq";
 
-revoke select on table "public"."products" from "postgres";
+revoke select on table "public"."products" from "schemainspect_test_role";
 
 alter table "public"."products" drop constraint "products_name_key";
 
@@ -180,6 +180,6 @@ create materialized view "public"."matvvv" as  SELECT 2 AS a;
 create or replace view "public"."vvv" as  SELECT 2 AS a;
 
 
-grant update on table "public"."products" to "postgres";
+grant update on table "public"."products" to "schemainspect_test_role";
 
 drop schema if exists "badschema";

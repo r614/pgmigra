@@ -9,8 +9,8 @@ import psycopg
 import yaml
 from psycopg.rows import namedtuple_row
 
-from .get import get_inspector
 from .misc import quoted_identifier
+from .pg import PostgreSQL
 from .tableformat import t
 
 
@@ -32,7 +32,7 @@ def parse_args(args: list[str]) -> argparse.Namespace:
 
 def do_deps(db_url: str) -> None:
     with psycopg.connect(db_url, row_factory=namedtuple_row, autocommit=True) as s:
-        i = get_inspector(s)
+        i = PostgreSQL(s)
         deps = i.deps
 
     def process_row(dep: Any) -> dict[str, str]:
@@ -60,7 +60,7 @@ def do_deps(db_url: str) -> None:
 
 def do_yaml(db_url: str) -> None:
     with psycopg.connect(db_url, row_factory=namedtuple_row, autocommit=True) as s:
-        i = get_inspector(s)
+        i = PostgreSQL(s)
         defn = i.encodeable_definition()
 
     x = StringIO()

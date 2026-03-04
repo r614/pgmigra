@@ -4,7 +4,7 @@ from typing import Any
 
 import psycopg
 
-from .inspector import DBInspector, NullInspector
+from .inspector import NullInspector
 from .pg import PostgreSQL
 
 
@@ -12,7 +12,7 @@ def get_inspector(
     x: psycopg.Connection[Any] | None,
     schema: str | list[str] | None = None,
     exclude_schema: str | None = None,
-) -> DBInspector:
+) -> PostgreSQL | NullInspector:
     if schema and exclude_schema:
         raise ValueError("Cannot provide both schema and exclude_schema")
     if x is None:

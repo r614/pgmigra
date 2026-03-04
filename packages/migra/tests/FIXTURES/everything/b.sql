@@ -31,7 +31,7 @@ CREATE TABLE products (
 
 create index on products(name);
 
-grant update, insert on table products to postgres;
+grant update, insert on table products to schemainspect_test_role;
 
 CREATE TABLE orders (
     order_id integer primary key unique,

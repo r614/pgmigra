@@ -1,5 +1,6 @@
 import io
 import os
+import re
 from difflib import ndiff as difflib_diff
 
 import pytest
@@ -13,6 +14,28 @@ from pytest import raises
 def textdiff(a, b):
     cd = difflib_diff(a.splitlines(), b.splitlines())
     return "\n" + "\n".join(cd) + "\n"
+
+
+def normalize_view_columns(sql):
+    """Strip table-qualified column references in view/matview definitions.
+
+    PG 14/15 qualifies columns with table names (e.g., SELECT t.id, GROUP BY t.id)
+    while PG 16+ omits the qualifier. Normalize by removing the table prefix
+    throughout the entire view body.
+    """
+
+    def strip_prefixes(match):
+        prefix = match.group(1)
+        body = match.group(2)
+        cleaned = re.sub(r'(?:\b\w+|"[^"]+")\.\b(\w+)', r"\1", body)
+        return f"{prefix}{cleaned}"
+
+    return re.sub(
+        r"(create (?:or replace )?(?:materialized )?view\b.*?\bas\s+)(SELECT.*?;)",
+        strip_prefixes,
+        sql,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
 
 
 SQL = """select 1;
@@ -166,7 +189,7 @@ def do_fixture_test(
 
         output = out.getvalue().strip()
         if check_expected:
-            assert output == EXPECTED
+            assert normalize_view_columns(output) == normalize_view_columns(EXPECTED)
 
         ADDITIONS = io.open(fixture_path + "additions.sql").read().strip()
         EXPECTED2 = io.open(fixture_path + "expected2.sql").read().strip()
@@ -196,7 +219,9 @@ def do_fixture_test(
             expected = EXPECTED2 if ADDITIONS else EXPECTED
 
             if check_expected:
-                assert m.sql.strip() == expected  # sql generated OK
+                assert normalize_view_columns(m.sql.strip()) == normalize_view_columns(
+                    expected
+                )  # sql generated OK
 
             m.apply()
             # check for changes again and make sure none are pending

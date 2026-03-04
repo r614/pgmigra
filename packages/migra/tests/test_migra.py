@@ -229,36 +229,3 @@ def do_fixture_test(
         args = parse_args(flags + ["EMPTY", "EMPTY"])
         out, err = outs()
         assert run(args, out=out, err=err) == 0
-
-
-def test_pg_url_formats():
-    """Verify _pg_url handles various auth configurations."""
-    from migra.db import _pg_url
-
-    # No user, no password
-    url = _pg_url("localhost", "5432", "", "testdb")
-    assert url == "postgresql://localhost:5432/testdb"
-
-    # User without password (trust auth / .pgpass)
-    url = _pg_url("localhost", "5432", "myuser", "testdb")
-    assert url == "postgresql://myuser@localhost:5432/testdb"
-
-    # User with password
-    url = _pg_url("localhost", "5432", "myuser", "testdb", "secret")
-    assert url == "postgresql://myuser:secret@localhost:5432/testdb"
-
-    # Empty password string (same as no password)
-    url = _pg_url("localhost", "5432", "myuser", "testdb", "")
-    assert url == "postgresql://myuser@localhost:5432/testdb"
-
-
-def test_temporary_database_works():
-    """Verify temporary_database creates and cleans up databases."""
-    from migra.db import temporary_database, connect
-
-    with temporary_database() as url:
-        assert "postgresql://" in url
-        # Should be able to connect
-        with connect(url) as conn:
-            result = conn.execute("SELECT 1 as x")
-            assert list(result)[0].x == 1

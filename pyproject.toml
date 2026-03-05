@@ -1,12 +1,12 @@
 [project]
-name = "migra-workspace"
+name = "pgmigra-workspace"
 version = "0.0.0"
 requires-python = ">=3.10"
 authors = [{ name = "Roshan Pawar", email = "roshan@r614.dev" }]
 
 [dependency-groups]
 dev = [
-    "migra",
+    "pgmigra",
     "pytest",
     "pytest-cov",
     "psycopg[binary]",
@@ -15,10 +15,10 @@ dev = [
 ]
 
 [tool.uv.workspace]
-members = ["packages/migra"]
+members = ["packages/pgmigra"]
 
 [tool.uv.sources]
-migra = { workspace = true }
+pgmigra = { workspace = true }
 
 [tool.ruff]
 line-length = 88
@@ -31,7 +31,7 @@ ignore = ["E501", "E721"]
 python-version = "3.10"
 
 [tool.ty.src]
-exclude = ["packages/migra/tests/**"]
+exclude = ["packages/pgmigra/tests/**"]
 
 [tool.pytest.ini_options]
-testpaths = ["packages/migra/tests"]
+testpaths = ["packages/pgmigra/tests"]

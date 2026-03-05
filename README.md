@@ -1,52 +1,45 @@
-# migra
+# pgmigra
 
 [![Test](https://github.com/r614/migra/actions/workflows/test.yml/badge.svg)](https://github.com/r614/migra/actions/workflows/test.yml)
 
-Like `diff` but for PostgreSQL schemas.
+Like `diff` but for PostgreSQL schemas. Compares two PostgreSQL databases and outputs the DDL statements needed to make them match.
 
 ```console
-$ migra postgresql:///a postgresql:///b
+$ pgmigra postgresql:///a postgresql:///b
 alter table "public"."products" add column newcolumn text;
 
 alter table "public"."products" add constraint "x" CHECK ((price > (0)::numeric));
 ```
 
-## Highlights
+pgmigra is a fork of the now-deprecated [djrobstep/migra](https://github.com/djrobstep/migra) and
+[djrobstep/schemainspect](https://github.com/djrobstep/schemainspect). Compared to the original:
 
-- Compares two PostgreSQL databases and generates the SQL to make them match.
-- Handles tables, views, functions, constraints, indexes, sequences, enums, triggers, RLS policies,
-  privileges, and more.
-- Dependency-aware — drops and creates views, functions, and types in the correct order.
-- Safe by default — refuses to generate `DROP` statements unless `--unsafe` is passed.
-- Usable as a CLI tool or as a Python library.
-- Ignores extension-managed schema contents, leaving them to the extension.
-
-migra is a rewrite of [djrobstep/migra](https://github.com/djrobstep/migra) and
-[djrobstep/schemainspect](https://github.com/djrobstep/schemainspect), which are no longer
-maintained.
+- Actively maintained with PG 14-18 support (drops legacy PG 9-13)
+- Centralized object registry with dependency-aware DDL ordering
+- Many more DDL object types (foreign data wrappers, text search, operators, publications, etc.)
+- Combined schemainspect into a single package
+- Modern Python (3.10+, type hints, psycopg3)
 
 ## Installation
 
 Install from GitHub with pip:
 
 ```bash
-pip install "migra @ git+https://github.com/r614/migra.git#subdirectory=packages/migra"
+pip install "pgmigra @ git+https://github.com/r614/migra.git#subdirectory=packages/pgmigra"
 ```
 
 Or with [uv](https://github.com/astral-sh/uv):
 
 ```bash
-uv add "migra @ git+https://github.com/r614/migra.git#subdirectory=packages/migra"
+uv add "pgmigra @ git+https://github.com/r614/migra.git#subdirectory=packages/pgmigra"
 ```
 
-## Features
+## Usage
 
 ### Schema diffing
 
-Compare any two PostgreSQL databases and get the migration SQL:
-
 ```console
-$ migra postgresql:///source postgresql:///target
+$ pgmigra postgresql:///source postgresql:///target
 create table "public"."users" (
     "id" serial primary key,
     "email" text not null
@@ -57,11 +50,11 @@ Empty output means the schemas already match.
 
 ### Safe migrations
 
-By default, migra exits with an error if any `DROP` statements would be generated. Use `--unsafe`
+By default, pgmigra exits with an error if any `DROP` statements would be generated. Use `--unsafe`
 to allow destructive changes:
 
 ```console
-$ migra --unsafe postgresql:///source postgresql:///target
+$ pgmigra --unsafe postgresql:///source postgresql:///target
 drop table "public"."old_table";
 ```
 
@@ -70,7 +63,7 @@ drop table "public"."old_table";
 Pipe the output to a file, review it, then apply in a transaction:
 
 ```console
-$ migra --unsafe postgresql:///production postgresql:///target > migration.sql
+$ pgmigra --unsafe postgresql:///production postgresql:///target > migration.sql
 $ psql postgresql:///production -1 -f migration.sql
 ```
 
@@ -79,7 +72,7 @@ $ psql postgresql:///production -1 -f migration.sql
 Use `EMPTY` as the source to generate full schema creation SQL:
 
 ```console
-$ migra --unsafe EMPTY postgresql:///mydb
+$ pgmigra --unsafe EMPTY postgresql:///mydb
 ```
 
 ### Privileges and roles
@@ -87,16 +80,14 @@ $ migra --unsafe EMPTY postgresql:///mydb
 Include `GRANT`/`REVOKE` statements and role diffing with opt-in flags:
 
 ```console
-$ migra --with-privileges --with-roles postgresql:///a postgresql:///b
+$ pgmigra --with-privileges --with-roles postgresql:///a postgresql:///b
 ```
 
 ### Python API
 
-Use migra programmatically for auto-syncing, CI checks, or custom workflows:
-
 ```python
-from migra import Migration
-from migra.db import connect
+from pgmigra import Migration
+from pgmigra.db import connect
 
 with connect("postgresql:///source") as s0, connect("postgresql:///target") as s1:
     m = Migration(s0, s1)
@@ -105,7 +96,7 @@ with connect("postgresql:///source") as s0, connect("postgresql:///target") as s
     print(m.sql)
 ```
 
-### Supported objects
+## Supported objects
 
 | Object | Notes |
 | --- | --- |
@@ -118,17 +109,32 @@ with connect("postgresql:///source") as s0, connect("postgresql:///target") as s
 | Schemas | |
 | Extensions | |
 | Enums | |
-| Privileges | Requires `--with-privileges` |
-| Roles | Requires `--with-roles` |
-| Row-level security | |
-| Triggers | |
-| Identity columns | |
-| Generated columns | |
-| Collations | |
 | Domains | |
 | Range types | |
+| Collations | |
+| Triggers | |
+| Row-level security | |
+| Rules | |
+| Identity columns | |
+| Generated columns | |
+| Privileges | Requires `--with-privileges` |
+| Roles | Requires `--with-roles` |
+| Foreign data wrappers | |
+| Foreign servers | |
+| User mappings | |
+| Foreign tables | |
+| Text search dictionaries | |
+| Text search configurations | |
+| Operators | |
+| Operator classes | |
+| Operator families | |
+| Publications | |
+| Extended statistics | |
+| Event triggers | |
+| Casts | |
+| Comments | |
 
-### CLI reference
+## CLI reference
 
 | Flag | Description |
 | --- | --- |
@@ -144,7 +150,7 @@ with connect("postgresql:///source") as s0, connect("postgresql:///target") as s
 
 ### Connection URLs
 
-migra uses standard PostgreSQL connection URLs:
+Standard PostgreSQL connection URLs:
 
 ```
 postgresql://username:password@hostname/databasename
@@ -164,11 +170,11 @@ just fmt         # ruff format + fix
 just typecheck   # ty check
 ```
 
-Tests run against a real PostgreSQL instance. CI runs across Python 3.10-3.13 and PostgreSQL 14-17.
+Tests run against a real PostgreSQL instance. CI runs across Python 3.10-3.13 and PostgreSQL 14-18.
 
 ```bash
 just test-pg 16      # test against PG 16 via Docker
-just test-pg-all     # test against PG 14, 15, 16, 17
+just test-pg-all     # test against PG 14-18
 ```
 
 ## Acknowledgements

@@ -7,11 +7,11 @@ install:
 
 # Run all tests
 test:
-    uv run pytest packages/migra/tests -x -svv --tb=short
+    uv run pytest packages/pgmigra/tests -x -svv --tb=short
 
 # Run tests with coverage
 test-cov:
-    uv run pytest packages/migra/tests -x --cov=packages/migra/migra --cov-report=term-missing
+    uv run pytest packages/pgmigra/tests -x --cov=packages/pgmigra/migra --cov-report=term-missing
 
 # Lint
 lint:
@@ -35,7 +35,7 @@ typecheck:
 test-pg version="16" *pytest_args="":
     #!/usr/bin/env bash
     set -euo pipefail
-    CONTAINER="migra-test-pg{{version}}"
+    CONTAINER="pgmigra-test-pg{{version}}"
     PORT=$((5430 + {{version}}))
     if ! docker ps --format '{{"{{"}}.Names{{"}}"}}' | grep -q "^${CONTAINER}$"; then
         docker rm -f "$CONTAINER" 2>/dev/null || true
@@ -47,7 +47,7 @@ test-pg version="16" *pytest_args="":
         docker exec "$CONTAINER" psql -U postgres -c "CREATE ROLE schemainspect_test_role" 2>/dev/null || true
     fi
     PGHOST=localhost PGPORT=$PORT PGUSER=postgres \
-        uv run pytest packages/migra/tests -x --tb=short {{pytest_args}}
+        uv run pytest packages/pgmigra/tests -x --tb=short {{pytest_args}}
 
 # Run tests against all supported PG versions (sequentially)
 test-pg-all-seq *pytest_args="":
@@ -64,17 +64,17 @@ test-pg-all *pytest_args="":
     pids=()
     versions=(14 15 16 17 18)
     for v in "${versions[@]}"; do
-        just test-pg "$v" {{pytest_args}} > /tmp/migra-pg${v}.log 2>&1 &
+        just test-pg "$v" {{pytest_args}} > /tmp/pgmigra-pg${v}.log 2>&1 &
         pids+=($!)
     done
     failed=0
     for i in "${!versions[@]}"; do
         v=${versions[$i]}
         if wait "${pids[$i]}"; then
-            echo "PG ${v}: $(tail -1 /tmp/migra-pg${v}.log)"
+            echo "PG ${v}: $(tail -1 /tmp/pgmigra-pg${v}.log)"
         else
             echo "PG ${v}: FAILED"
-            tail -5 /tmp/migra-pg${v}.log
+            tail -5 /tmp/pgmigra-pg${v}.log
             failed=1
         fi
     done
@@ -84,7 +84,7 @@ test-pg-all *pytest_args="":
 test-pg-start:
     #!/usr/bin/env bash
     for v in 14 15 16 17 18; do
-        CONTAINER="migra-test-pg${v}"
+        CONTAINER="pgmigra-test-pg${v}"
         PORT=$((5430 + v))
         if ! docker ps --format '{{"{{"}}.Names{{"}}"}}' | grep -q "^${CONTAINER}$"; then
             docker rm -f "$CONTAINER" 2>/dev/null || true
@@ -95,11 +95,11 @@ test-pg-start:
         fi
     done
     for v in 14 15 16 17 18; do
-        CONTAINER="migra-test-pg${v}"
+        CONTAINER="pgmigra-test-pg${v}"
         until docker exec "$CONTAINER" pg_isready -U postgres > /dev/null 2>&1; do sleep 0.2; done
     done
     echo "All PG containers ready"
 
 # Stop all test PG containers
 test-pg-stop:
-    docker rm -f migra-test-pg14 migra-test-pg15 migra-test-pg16 migra-test-pg17 migra-test-pg18 2>/dev/null || true
+    docker rm -f pgmigra-test-pg14 pgmigra-test-pg15 pgmigra-test-pg16 pgmigra-test-pg17 pgmigra-test-pg18 2>/dev/null || true

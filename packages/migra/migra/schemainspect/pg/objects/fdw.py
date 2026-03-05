@@ -1,6 +1,5 @@
 from ...inspected import Inspected
 from ...misc import quoted_identifier
-from ..registry import ObjectType, register
 
 
 class InspectedFDW(Inspected):
@@ -55,6 +54,3 @@ class InspectedFDW(Inspected):
             and self.validator_schema == other.validator_schema
             and self.options == other.options
         )
-
-
-register(ObjectType(name="fdws", schema_filterable=False))

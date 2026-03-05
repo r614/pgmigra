@@ -1,6 +1,5 @@
 from ...inspected import Inspected
 from ...misc import quoted_identifier
-from ..registry import ObjectType, register
 
 
 class InspectedRole(Inspected):
@@ -94,6 +93,3 @@ class InspectedRole(Inspected):
             and self.connlimit == other.connlimit
             and sorted(self.member_of) == sorted(other.member_of)
         )
-
-
-register(ObjectType(name="roles", schema_filterable=False, include_in_eq=False))

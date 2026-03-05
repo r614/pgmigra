@@ -2,8 +2,8 @@ from migra import Migration
 from migra.db import connect, temporary_database
 
 
-def test_alter_policy():
-    """Verify ALTER POLICY is generated for modified RLS policies instead of DROP+CREATE."""
+def test_modify_policy():
+    """Verify modified RLS policies are handled as DROP+CREATE."""
     with (
         temporary_database(host="localhost") as d0,
         temporary_database(host="localhost") as d1,
@@ -31,7 +31,8 @@ def test_alter_policy():
             m.set_safety(False)
             m.add_all_changes(privileges=True)
             sql = m.sql.lower()
-            assert "alter policy" in sql
+            assert "drop policy" in sql
+            assert "create policy" in sql
             assert "account_access" in sql
 
 

@@ -1,6 +1,5 @@
 from ...inspected import Inspected, TableRelated
 from ...misc import quoted_identifier
-from ..registry import ObjectType, register
 
 
 class InspectedRule(Inspected, TableRelated):
@@ -43,6 +42,3 @@ class InspectedRule(Inspected, TableRelated):
             and self.enabled == other.enabled
             and self.definition == other.definition
         )
-
-
-register(ObjectType(name="rules"))

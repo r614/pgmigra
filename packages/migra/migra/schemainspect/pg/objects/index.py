@@ -1,7 +1,6 @@
 import textwrap
 
 from ...inspected import Inspected, TableRelated
-from ..registry import ObjectType, register
 
 
 class InspectedIndex(Inspected, TableRelated):
@@ -85,6 +84,3 @@ class InspectedIndex(Inspected, TableRelated):
             self.algorithm == other.algorithm,
         )
         return all(equalities)
-
-
-register(ObjectType(name="indexes", include_in_eq=False))

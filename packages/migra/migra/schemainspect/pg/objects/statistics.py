@@ -1,5 +1,4 @@
 from ...inspected import Inspected
-from ..registry import ObjectType, register
 
 
 class InspectedStatistics(Inspected):
@@ -36,6 +35,3 @@ class InspectedStatistics(Inspected):
             and (not self._has_custom_stattarget or self.stattarget == other.stattarget)
             and self.definition == other.definition
         )
-
-
-register(ObjectType(name="statistics"))

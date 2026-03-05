@@ -8,7 +8,7 @@ from .changes import Changes
 from .db import execute
 from .schemainspect import get_inspector
 from .schemainspect.pg import PostgreSQL
-from .schemainspect.pg.registry import DIFF_STEPS
+from .schemainspect.pg.registry import get_diff_steps
 from .statements import Statements
 
 
@@ -100,7 +100,7 @@ class Migration:
         if roles:
             conditions["roles"] = True
 
-        for step in DIFF_STEPS:
+        for step in get_diff_steps():
             if step.condition and not conditions.get(step.condition):
                 continue
             change_fn = getattr(self.changes, step.name)

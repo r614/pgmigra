@@ -1,6 +1,5 @@
 from ...inspected import Inspected
 from ...misc import quoted_identifier
-from ..registry import ObjectType, register
 
 
 class InspectedEnum(Inspected):
@@ -65,6 +64,3 @@ class InspectedEnum(Inspected):
             self.elements == other.elements,
         )
         return all(equalities)
-
-
-register(ObjectType(name="enums"))

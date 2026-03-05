@@ -1,6 +1,5 @@
 from ...inspected import Inspected
 from ...misc import quoted_identifier
-from ..registry import ObjectType, register
 
 
 class InspectedPublication(Inspected):
@@ -110,6 +109,3 @@ class InspectedPublication(Inspected):
             and self.publish_via_partition_root == other.publish_via_partition_root
             and sorted(self.tables) == sorted(other.tables)
         )
-
-
-register(ObjectType(name="publications", schema_filterable=False))

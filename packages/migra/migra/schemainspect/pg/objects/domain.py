@@ -1,5 +1,4 @@
 from ...inspected import Inspected
-from ..registry import ObjectType, register
 
 
 class InspectedDomain(Inspected):
@@ -77,6 +76,3 @@ as {self.data_type}
             )
         except AttributeError:
             return False
-
-
-register(ObjectType(name="domains"))

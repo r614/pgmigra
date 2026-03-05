@@ -1,6 +1,5 @@
 from ...inspected import Inspected
 from ...misc import quoted_identifier
-from ..registry import ObjectType, register
 
 
 class InspectedComment(Inspected):
@@ -46,6 +45,3 @@ class InspectedComment(Inspected):
             and self.column_name == other.column_name
             and self.comment == other.comment
         )
-
-
-register(ObjectType(name="comments"))

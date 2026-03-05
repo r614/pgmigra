@@ -1,6 +1,5 @@
 from ...inspected import Inspected
 from ...misc import quoted_identifier
-from ..registry import ObjectType, register
 
 
 class InspectedPrivilege(Inspected):
@@ -53,6 +52,3 @@ class InspectedPrivilege(Inspected):
                 col_key,
             )
         return self.object_type, self.quoted_full_name, self.target_user, self.privilege
-
-
-register(ObjectType(name="privileges", include_in_eq=False))

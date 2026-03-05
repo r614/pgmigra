@@ -1,5 +1,4 @@
 from ...inspected import Inspected, TableRelated
-from ..registry import ObjectType, register
 
 COMMANDTYPES = {"*": "all", "r": "select", "a": "insert", "w": "update", "d": "delete"}
 
@@ -86,6 +85,3 @@ to {roleslist}{qual_clause}{withcheck_clause};
             self.withcheck == other.withcheck,
         )
         return all(equalities)
-
-
-register(ObjectType(name="rlspolicies"))

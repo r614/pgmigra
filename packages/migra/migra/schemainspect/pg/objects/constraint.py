@@ -1,6 +1,5 @@
 from ...inspected import Inspected, TableRelated
 from ...misc import quoted_identifier
-from ..registry import ObjectType, register
 
 
 class InspectedConstraint(Inspected, TableRelated):
@@ -94,12 +93,3 @@ class InspectedConstraint(Inspected, TableRelated):
             self.initially_deferred == other.initially_deferred,
         )
         return all(equalities)
-
-
-register(
-    ObjectType(
-        name="constraints",
-        schema_filterable=True,
-        include_in_eq=True,
-    )
-)

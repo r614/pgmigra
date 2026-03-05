@@ -1,5 +1,4 @@
 from ...inspected import Inspected
-from ..registry import ObjectType, register
 
 
 class InspectedRangeType(Inspected):
@@ -50,6 +49,3 @@ class InspectedRangeType(Inspected):
             )
         except AttributeError:
             return False
-
-
-register(ObjectType(name="range_types"))

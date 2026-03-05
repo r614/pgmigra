@@ -92,7 +92,7 @@ def statements_from_differences(
     )
 
     drop_and_recreate = modifications and not modifications_as_alters
-    alters = modifications and modifications_as_alters
+    alters = modifications and modifications_as_alters and not drops_only
 
     if drops:
         pending_drops |= set(removed)
@@ -187,7 +187,20 @@ def get_enum_modifications(
     pre = Statements()
     recreate = Statements()
     post = Statements()
-    enums_to_change = e_modified
+
+    alterable: dict[str, InspectedEnum] = {}
+    must_recreate: dict[str, InspectedEnum] = {}
+    for k, v in e_modified.items():
+        old = enums_from[k]
+        if old.can_be_changed_to(v):
+            alterable[k] = v
+        else:
+            must_recreate[k] = v
+
+    for k, v in alterable.items():
+        old = enums_from[k]
+        for stmt in old.change_statements(v):
+            pre.append(stmt)
 
     for t, v in t_modified.items():
         t_before = tables_from[t]
@@ -199,6 +212,7 @@ def get_enum_modifications(
                 (c.is_enum and before.is_enum)
                 and c.dbtypestr == before.dbtypestr
                 and c.enum != before.enum
+                and before.enum.quoted_full_name not in alterable
             ):
                 has_default = c.default and not c.is_generated
 
@@ -214,7 +228,7 @@ def get_enum_modifications(
 
     unwanted_suffix = "__old_version_to_be_dropped"
 
-    for e in enums_to_change.values():
+    for e in must_recreate.values():
         unwanted_name = e.name + unwanted_suffix
 
         rename = e.alter_rename_statement(unwanted_name)
@@ -703,12 +717,27 @@ class Changes:
         sig = quoted_identifier(i.table_name, i.schema)
         return sig in ii.materialized_views
 
+    def _modified_matview_sigs(self) -> set[str]:
+        from_mvs = self.i_from.materialized_views
+        target_mvs = self.i_target.materialized_views
+        return {k for k in from_mvs if k in target_mvs and from_mvs[k] != target_mvs[k]}
+
     @property
     def mv_indexes(self) -> partial[Statements]:
         a = self.i_from.indexes.items()
         b = self.i_target.indexes.items()
         a_od = {k: v for k, v in a if self._is_mv_index(v, self.i_from)}
         b_od = {k: v for k, v in b if self._is_mv_index(v, self.i_target)}
+        # When a matview is modified it gets drop+recreated, which implicitly
+        # drops its indexes.  Remove those from a_od so they appear as "added"
+        # in the target and get CREATE statements in the creations phase.
+        modified_mvs = self._modified_matview_sigs()
+        if modified_mvs:
+            a_od = {
+                k: v
+                for k, v in a_od.items()
+                if quoted_identifier(v.table_name, v.schema) not in modified_mvs
+            }
         return partial(statements_for_changes, a_od, b_od)
 
     @property
@@ -719,48 +748,18 @@ class Changes:
         b_od = {k: v for k, v in b if not self._is_mv_index(v, self.i_target)}
         return partial(statements_for_changes, a_od, b_od)
 
-    @property
-    def sequences(self) -> partial[Statements]:
-        return partial(
-            statements_for_changes,
-            self.i_from.sequences,
-            self.i_target.sequences,
-            modifications=False,
-        )
-
-    @property
-    def rlspolicies(self) -> partial[Statements]:
-        return partial(
-            statements_for_changes,
-            self.i_from.rlspolicies,
-            self.i_target.rlspolicies,
-            modifications_as_alters=True,
-        )
-
-    @property
-    def roles(self) -> partial[Statements]:
-        return partial(
-            statements_for_changes,
-            getattr(self.i_from, "roles", {}),
-            getattr(self.i_target, "roles", {}),
-            modifications_as_alters=True,
-        )
-
-    @property
-    def publications(self) -> partial[Statements]:
-        return partial(
-            statements_for_changes,
-            self.i_from.publications,
-            self.i_target.publications,
-            modifications_as_alters=True,
-        )
-
     def __getattr__(self, name: str) -> partial[Statements]:
         if name in REGISTRY:
+            obj_type = REGISTRY[name]
+            kwargs: dict[str, Any] = {}
+            if obj_type.modification == "alter":
+                kwargs["modifications_as_alters"] = True
+            elif obj_type.modification == "none":
+                kwargs["modifications"] = False
             return partial(
                 statements_for_changes,
                 getattr(self.i_from, name),
                 getattr(self.i_target, name),
+                **kwargs,
             )
-
         raise AttributeError(name)

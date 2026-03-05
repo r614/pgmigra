@@ -1,5 +1,4 @@
 from ...inspected import Inspected
-from ..registry import ObjectType, register
 
 
 class InspectedCollation(Inspected):
@@ -33,6 +32,3 @@ class InspectedCollation(Inspected):
             self.locale == other.locale,
         )
         return all(equalities)
-
-
-register(ObjectType(name="collations"))

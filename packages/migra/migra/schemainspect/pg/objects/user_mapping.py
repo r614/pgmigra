@@ -1,6 +1,5 @@
 from ...inspected import Inspected
 from ...misc import quoted_identifier
-from ..registry import ObjectType, register
 
 
 class InspectedUserMapping(Inspected):
@@ -61,6 +60,3 @@ def _parse_options(options):
             if "=" in opt:
                 k, v = opt.split("=", 1)
                 yield k.strip(), v.strip()
-
-
-register(ObjectType(name="user_mappings", schema_filterable=False))

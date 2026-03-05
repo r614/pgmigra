@@ -1,6 +1,5 @@
 from ...inspected import Inspected
 from ...misc import quoted_identifier
-from ..registry import ObjectType, register
 
 
 class InspectedTrigger(Inspected):
@@ -63,6 +62,3 @@ class InspectedTrigger(Inspected):
             and self.enabled == other.enabled
             and self.full_definition == other.full_definition
         )
-
-
-register(ObjectType(name="triggers"))

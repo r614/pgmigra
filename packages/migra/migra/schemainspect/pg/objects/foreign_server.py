@@ -1,6 +1,5 @@
 from ...inspected import Inspected
 from ...misc import quoted_identifier
-from ..registry import ObjectType, register
 
 
 class InspectedForeignServer(Inspected):
@@ -41,6 +40,3 @@ class InspectedForeignServer(Inspected):
             and self.server_version == other.server_version
             and self.options == other.options
         )
-
-
-register(ObjectType(name="foreign_servers", schema_filterable=False))

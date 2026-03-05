@@ -1,6 +1,5 @@
 from ...inspected import Inspected
 from ...misc import quoted_identifier
-from ..registry import ObjectType, register
 
 
 class InspectedSchema(Inspected):
@@ -26,6 +25,3 @@ class InspectedSchema(Inspected):
 
     def __eq__(self, other):
         return self.schema == other.schema
-
-
-register(ObjectType(name="schemas"))

@@ -1,6 +1,5 @@
 from ...inspected import Inspected
 from ...misc import quoted_identifier
-from ..registry import ObjectType, register
 
 
 class InspectedSequence(Inspected):
@@ -55,6 +54,3 @@ class InspectedSequence(Inspected):
             self.quoted_table_and_column_name == other.quoted_table_and_column_name,
         )
         return all(equalities)
-
-
-register(ObjectType(name="sequences"))

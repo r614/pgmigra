@@ -6,16 +6,21 @@ from ..inspected import ColumnInfo
 from ..inspector import to_pytype
 from ..misc import quoted_identifier
 from .objects import (
+    InspectedCast,
     InspectedCollation,
     InspectedComment,
     InspectedConstraint,
     InspectedDomain,
     InspectedEnum,
+    InspectedEventTrigger,
     InspectedExtension,
     InspectedFDW,
     InspectedForeignServer,
     InspectedFunction,
     InspectedIndex,
+    InspectedOperator,
+    InspectedOperatorClass,
+    InspectedOperatorFamily,
     InspectedPrivilege,
     InspectedPublication,
     InspectedRangeType,
@@ -27,6 +32,8 @@ from .objects import (
     InspectedSequence,
     InspectedStatistics,
     InspectedTrigger,
+    InspectedTSConfig,
+    InspectedTSDict,
     InspectedType,
     InspectedUserMapping,
 )
@@ -68,6 +75,16 @@ STATISTICS_QUERY = _read_sql("statistics.sql")
 FDWS_QUERY = _read_sql("fdws.sql")
 FOREIGN_SERVERS_QUERY = _read_sql("foreign_servers.sql")
 USER_MAPPINGS_QUERY = _read_sql("user_mappings.sql")
+EVENT_TRIGGERS_QUERY = _read_sql("event_triggers.sql")
+TS_DICTS_QUERY = _read_sql("ts_dicts.sql")
+TS_CONFIGS_QUERY = _read_sql("ts_configs.sql")
+TS_CONFIG_MAPPINGS_QUERY = _read_sql("ts_config_mappings.sql")
+CASTS_QUERY = _read_sql("casts.sql")
+OPERATORS_QUERY = _read_sql("operators.sql")
+OPERATOR_FAMILIES_QUERY = _read_sql("operator_families.sql")
+OPERATOR_CLASSES_QUERY = _read_sql("operator_classes.sql")
+OPCLASS_OPERATORS_QUERY = _read_sql("opclass_operators.sql")
+OPCLASS_PROCS_QUERY = _read_sql("opclass_procs.sql")
 
 
 class PostgreSQL:
@@ -119,6 +136,16 @@ class PostgreSQL:
         self.FDWS_QUERY = processed(FDWS_QUERY)
         self.FOREIGN_SERVERS_QUERY = processed(FOREIGN_SERVERS_QUERY)
         self.USER_MAPPINGS_QUERY = processed(USER_MAPPINGS_QUERY)
+        self.EVENT_TRIGGERS_QUERY = processed(EVENT_TRIGGERS_QUERY)
+        self.TS_DICTS_QUERY = processed(TS_DICTS_QUERY)
+        self.TS_CONFIGS_QUERY = processed(TS_CONFIGS_QUERY)
+        self.TS_CONFIG_MAPPINGS_QUERY = processed(TS_CONFIG_MAPPINGS_QUERY)
+        self.CASTS_QUERY = processed(CASTS_QUERY)
+        self.OPERATORS_QUERY = processed(OPERATORS_QUERY)
+        self.OPERATOR_FAMILIES_QUERY = processed(OPERATOR_FAMILIES_QUERY)
+        self.OPERATOR_CLASSES_QUERY = processed(OPERATOR_CLASSES_QUERY)
+        self.OPCLASS_OPERATORS_QUERY = processed(OPCLASS_OPERATORS_QUERY)
+        self.OPCLASS_PROCS_QUERY = processed(OPCLASS_PROCS_QUERY)
 
         self.c = c
         self.include_internal = include_internal
@@ -151,6 +178,13 @@ class PostgreSQL:
         self.load_fdws()
         self.load_foreign_servers()
         self.load_user_mappings()
+        self.load_event_triggers()
+        self.load_ts_dicts()
+        self.load_ts_configs()
+        self.load_casts()
+        self.load_operators()
+        self.load_operator_families()
+        self.load_operator_classes()
 
         self.load_deps()
         self.load_deps_all()
@@ -762,6 +796,158 @@ class PostgreSQL:
             for i in q
         ]
         self.user_mappings = {m.key: m for m in mappings}
+
+    def load_event_triggers(self):
+        q = self.execute(self.EVENT_TRIGGERS_QUERY)
+        triggers = [
+            InspectedEventTrigger(
+                name=i.name,
+                owner=i.owner,
+                event=i.event,
+                enabled=i.enabled,
+                tags=i.tags,
+                function_name=i.function_name,
+                function_schema=i.function_schema,
+            )
+            for i in q
+        ]
+        self.event_triggers = {t.quoted_full_name: t for t in triggers}
+
+    def load_ts_dicts(self):
+        q = self.execute(self.TS_DICTS_QUERY)
+        dicts = [
+            InspectedTSDict(
+                name=i.name,
+                schema=i.schema,
+                template_name=i.template_name,
+                template_schema=i.template_schema,
+                options=i.options,
+            )
+            for i in q
+        ]
+        self.ts_dicts = {d.quoted_full_name: d for d in dicts}
+
+    def load_ts_configs(self):
+        q = self.execute(self.TS_CONFIGS_QUERY)
+        configs = [
+            InspectedTSConfig(
+                name=i.name,
+                schema=i.schema,
+                parser_name=i.parser_name,
+                parser_schema=i.parser_schema,
+            )
+            for i in q
+        ]
+        config_map = {(c.schema, c.name): c for c in configs}
+
+        mq = self.execute(self.TS_CONFIG_MAPPINGS_QUERY)
+        for m in mq:
+            key = (m.config_schema, m.config_name)
+            if key in config_map:
+                cfg = config_map[key]
+                dict_name = quoted_identifier(m.dict_name, schema=m.dict_schema)
+                if m.token_type not in cfg.mappings:
+                    cfg.mappings[m.token_type] = []
+                cfg.mappings[m.token_type].append(dict_name)
+
+        self.ts_configs = {c.quoted_full_name: c for c in configs}
+
+    def load_casts(self):
+        q = self.execute(self.CASTS_QUERY)
+        casts = [
+            InspectedCast(
+                source_type=i.source_type,
+                target_type=i.target_type,
+                context=i.context,
+                method=i.method,
+                function_name=i.function_name,
+                function_schema=i.function_schema,
+                function_args=i.function_args,
+            )
+            for i in q
+        ]
+        self.casts = {c.key: c for c in casts}
+
+    def load_operators(self):
+        q = self.execute(self.OPERATORS_QUERY)
+        operators = [
+            InspectedOperator(
+                name=i.name,
+                schema=i.schema,
+                left_type=i.left_type,
+                right_type=i.right_type,
+                result_type=i.result_type,
+                function_name=i.function_name,
+                function_schema=i.function_schema,
+                function_args=i.function_args,
+                commutator_name=i.commutator_name,
+                commutator_schema=i.commutator_schema,
+                negator_name=i.negator_name,
+                negator_schema=i.negator_schema,
+                can_hash=i.can_hash,
+                can_merge=i.can_merge,
+            )
+            for i in q
+        ]
+        self.operators = {o.key: o for o in operators}
+
+    def load_operator_families(self):
+        q = self.execute(self.OPERATOR_FAMILIES_QUERY)
+        families = [
+            InspectedOperatorFamily(
+                name=i.name,
+                schema=i.schema,
+                access_method=i.access_method,
+            )
+            for i in q
+        ]
+        self.operator_families = {f.key: f for f in families}
+
+    def load_operator_classes(self):
+        q = self.execute(self.OPERATOR_CLASSES_QUERY)
+        classes = [
+            InspectedOperatorClass(
+                name=i.name,
+                schema=i.schema,
+                access_method=i.access_method,
+                is_default=i.is_default,
+                type_name=i.type_name,
+                family_name=i.family_name,
+                family_schema=i.family_schema,
+                storage_type=i.storage_type,
+            )
+            for i in q
+        ]
+        class_map = {(c.schema, c.name, c.access_method): c for c in classes}
+
+        oq = self.execute(self.OPCLASS_OPERATORS_QUERY)
+        for o in oq:
+            key = (o.class_schema, o.class_name, o.access_method)
+            if key in class_map:
+                class_map[key].operators.append(
+                    {
+                        "strategy": o.strategy,
+                        "operator_name": o.operator_name,
+                        "operator_schema": o.operator_schema,
+                        "left_type": o.left_type,
+                        "right_type": o.right_type,
+                    }
+                )
+
+        pq = self.execute(self.OPCLASS_PROCS_QUERY)
+        for p in pq:
+            key = (p.class_schema, p.class_name, p.access_method)
+            if key in class_map:
+                class_map[key].procs.append(
+                    {
+                        "support_number": p.support_number,
+                        "function_name": p.function_name,
+                        "function_schema": p.function_schema,
+                        "function_args": p.function_args,
+                    }
+                )
+
+        self.operator_classes = {c.key: c for c in classes}
 
     def _filterable_props(self):
         return _FILTERABLE_PROPS

@@ -1,5 +1,4 @@
 from ...inspected import Inspected
-from ..registry import ObjectType, register
 
 
 class InspectedExtension(Inspected):
@@ -40,6 +39,3 @@ class InspectedExtension(Inspected):
 
     def unversioned_copy(self):
         return InspectedExtension(self.name, self.schema)
-
-
-register(ObjectType(name="extensions"))

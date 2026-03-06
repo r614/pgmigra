@@ -130,7 +130,20 @@ class PostgreSQL:
         self.COMMENTS_QUERY = processed(COMMENTS_QUERY)
         self.ROLES_QUERY = processed(ROLES_QUERY)
         self.RANGE_TYPES_QUERY = processed(RANGE_TYPES_QUERY)
-        self.PUBLICATIONS_QUERY = processed(PUBLICATIONS_QUERY)
+        if self.pg_version >= 18:
+            publish_generated_columns_expr = (
+                "case p.pubgencols when 's' then 'stored' else 'none' end"
+                " as publish_generated_columns"
+            )
+        else:
+            publish_generated_columns_expr = (
+                "'none' as publish_generated_columns"
+            )
+        self.PUBLICATIONS_QUERY = processed(
+            PUBLICATIONS_QUERY.format(
+                publish_generated_columns_expr=publish_generated_columns_expr
+            )
+        )
         self.RULES_QUERY = processed(RULES_QUERY)
         self.STATISTICS_QUERY = processed(STATISTICS_QUERY)
         self.FDWS_QUERY = processed(FDWS_QUERY)
@@ -749,6 +762,7 @@ class PostgreSQL:
                 publish_via_partition_root=i.publish_via_partition_root,
                 owner=i.owner,
                 tables=i.tables,
+                publish_generated_columns=i.publish_generated_columns,
             )
             for i in rows
         ]

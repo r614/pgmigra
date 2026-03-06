@@ -5,9 +5,13 @@ default:
 install:
     uv sync
 
-# Run all tests
-test:
-    uv run pytest packages/pgmigra/tests -x -svv --tb=short
+# Run all tests (parallel via pytest-xdist)
+test *pytest_args="":
+    uv run pytest packages/pgmigra/tests -n auto -x --tb=short {{pytest_args}}
+
+# Run tests serially (for debugging)
+test-seq *pytest_args="":
+    uv run pytest packages/pgmigra/tests -x -svv --tb=short {{pytest_args}}
 
 # Run tests with coverage
 test-cov:

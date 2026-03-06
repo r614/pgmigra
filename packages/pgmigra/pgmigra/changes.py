@@ -290,8 +290,9 @@ def get_table_changes(
             v = added[t]
             statements.append(v.create_statement)
             if v.rowsecurity:
-                rls_alter = v.alter_rls_statement
-                statements.append(rls_alter)
+                statements.append(v.alter_rls_statement)
+            if v.forcerowsecurity:
+                statements.append(v.alter_force_rls_statement)
 
     statements += enums_post
 
@@ -306,6 +307,11 @@ def get_table_changes(
 
         if v.is_unlogged != before.is_unlogged:
             statements += [v.alter_unlogged_statement]
+
+        if v.owner and before.owner and v.owner != before.owner:
+            statements.append(
+                f"alter table {v.quoted_full_name} owner to {quoted_identifier(v.owner)};"
+            )
 
         # attach/detach tables with changed parent tables
         if v.parent_table != before.parent_table:
@@ -365,8 +371,10 @@ def get_table_changes(
             statements += c.alter_table_statements(c_before, t)
 
         if v.rowsecurity != before.rowsecurity:
-            rls_alter = v.alter_rls_statement
-            statements.append(rls_alter)
+            statements.append(v.alter_rls_statement)
+
+        if v.forcerowsecurity != before.forcerowsecurity:
+            statements.append(v.alter_force_rls_statement)
 
     seq_created, seq_dropped, seq_modified, _ = differences(
         sequences_from, sequences_target

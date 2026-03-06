@@ -95,6 +95,7 @@ class InspectedOperator(Inspected):
             and self.right_type == other.right_type
             and self.result_type == other.result_type
             and self.function_name == other.function_name
+            and self.function_schema == other.function_schema
             and self.function_args == other.function_args
             and self.commutator_name == other.commutator_name
             and self.commutator_schema == other.commutator_schema

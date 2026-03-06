@@ -39,13 +39,11 @@ class InspectedUserMapping(Inspected):
         return f"DROP USER MAPPING FOR {self._user_clause} SERVER {quoted_identifier(self.server_name)};"
 
     def __eq__(self, other):
-        equalities = [
-            self.server_name == other.server_name,
-            self.user_name == other.user_name,
-        ]
-        if self.options is not None and other.options is not None:
-            equalities.append(self.options == other.options)
-        return all(equalities)
+        return (
+            self.server_name == other.server_name
+            and self.user_name == other.user_name
+            and self.options == other.options
+        )
 
 
 def _parse_options(options):

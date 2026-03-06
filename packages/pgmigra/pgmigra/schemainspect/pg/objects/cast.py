@@ -62,5 +62,6 @@ class InspectedCast(Inspected):
             and self.context == other.context
             and self.method == other.method
             and self.function_name == other.function_name
+            and self.function_schema == other.function_schema
             and self.function_args == other.function_args
         )

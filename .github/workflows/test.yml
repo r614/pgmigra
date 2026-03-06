@@ -56,7 +56,7 @@ jobs:
         run: psql postgresql://postgres@localhost/postgres -c "CREATE ROLE schemainspect_test_role" || true
 
       - name: Run tests
-        run: uv run pytest packages/pgmigra/tests -x -svv --tb=short
+        run: uv run pytest packages/pgmigra/tests -n auto -x --tb=short
         env:
           PGHOST: localhost
           PGUSER: postgres

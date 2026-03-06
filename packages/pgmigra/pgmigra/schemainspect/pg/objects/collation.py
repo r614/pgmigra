@@ -21,14 +21,19 @@ class InspectedCollation(Inspected):
 
     @property
     def create_statement(self):
+        if self.lc_ctype and self.lc_ctype != self.lc_collate:
+            return (
+                f"create collation if not exists {self.quoted_full_name} "
+                f"(provider = '{self.provider}', lc_collate = '{self.lc_collate}', lc_ctype = '{self.lc_ctype}');"
+            )
         return f"create collation if not exists {self.quoted_full_name} (provider = '{self.provider}', locale = '{self.locale}');"
 
     def __eq__(self, other):
-
         equalities = (
             self.name == other.name,
             self.schema == other.schema,
             self.provider == other.provider,
-            self.locale == other.locale,
+            self.lc_collate == other.lc_collate,
+            self.lc_ctype == other.lc_ctype,
         )
         return all(equalities)

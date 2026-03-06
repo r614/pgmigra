@@ -35,20 +35,13 @@ class InspectedRole(Inspected):
     @property
     def options_clause(self):
         opts = []
-        if self.superuser:
-            opts.append("SUPERUSER")
-        if self.createdb:
-            opts.append("CREATEDB")
-        if self.createrole:
-            opts.append("CREATEROLE")
-        if self.login:
-            opts.append("LOGIN")
-        if self.replication:
-            opts.append("REPLICATION")
-        if self.bypassrls:
-            opts.append("BYPASSRLS")
-        if not self.inherit:
-            opts.append("NOINHERIT")
+        opts.append("SUPERUSER" if self.superuser else "NOSUPERUSER")
+        opts.append("CREATEDB" if self.createdb else "NOCREATEDB")
+        opts.append("CREATEROLE" if self.createrole else "NOCREATEROLE")
+        opts.append("LOGIN" if self.login else "NOLOGIN")
+        opts.append("REPLICATION" if self.replication else "NOREPLICATION")
+        opts.append("BYPASSRLS" if self.bypassrls else "NOBYPASSRLS")
+        opts.append("INHERIT" if self.inherit else "NOINHERIT")
         if self.connlimit >= 0:
             opts.append(f"CONNECTION LIMIT {self.connlimit}")
         return " ".join(opts)

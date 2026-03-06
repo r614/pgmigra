@@ -26,7 +26,10 @@ class InspectedForeignServer(Inspected):
         stmt += f" FOREIGN DATA WRAPPER {quoted_identifier(self.fdw_name)}"
         if self.options:
             stmt += f" OPTIONS ({self.options})"
-        return stmt + ";"
+        stmt += ";"
+        if self.owner:
+            stmt += f"\nALTER SERVER {self.quoted_full_name} OWNER TO {quoted_identifier(self.owner)};"
+        return stmt
 
     @property
     def drop_statement(self):
@@ -36,6 +39,7 @@ class InspectedForeignServer(Inspected):
         return (
             self.name == other.name
             and self.fdw_name == other.fdw_name
+            and self.owner == other.owner
             and self.server_type == other.server_type
             and self.server_version == other.server_version
             and self.options == other.options

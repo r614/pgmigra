@@ -36,6 +36,8 @@ class InspectedEventTrigger(Inspected):
             stmt += (
                 f"\nALTER EVENT TRIGGER {self.quoted_full_name} {status[self.enabled]};"
             )
+        if self.owner:
+            stmt += f"\nALTER EVENT TRIGGER {self.quoted_full_name} OWNER TO {quoted_identifier(self.owner)};"
         return stmt
 
     @property
@@ -45,6 +47,7 @@ class InspectedEventTrigger(Inspected):
     def __eq__(self, other):
         return (
             self.name == other.name
+            and self.owner == other.owner
             and self.event == other.event
             and self.enabled == other.enabled
             and self.tags == other.tags

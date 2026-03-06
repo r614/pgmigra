@@ -9,6 +9,7 @@ dev = [
     "pgmigra",
     "pytest",
     "pytest-cov",
+    "pytest-xdist",
     "psycopg[binary]",
     "ruff",
     "ty",

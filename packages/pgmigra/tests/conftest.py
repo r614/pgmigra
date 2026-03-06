@@ -1,10 +1,9 @@
 import io
 import os
-from uuid import uuid4
 
+import pgmigra.db
 import psycopg
 import pytest
-from psycopg import sql
 
 schemainspect_test_role = "schemainspect_test_role"
 
@@ -40,19 +39,27 @@ def pg_admin():
     conn.close()
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _db_pool():
+    pool = pgmigra.db.DatabasePool(_pg_url("postgres"))
+    pgmigra.db._database_pool = pool
+    yield pool
+    pgmigra.db._database_pool = None
+    pool.cleanup()
+
+
 @pytest.fixture()
-def db(pg_admin):
-    dbname = f"test_{uuid4().hex[:12]}"
-    pg_admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(dbname)))
-    yield _pg_url(dbname)
-    pg_admin.execute(
-        sql.SQL("DROP DATABASE IF EXISTS {}").format(sql.Identifier(dbname))
-    )
+def db():
+    with pgmigra.db.temporary_database() as url:
+        yield url
 
 
 @pytest.fixture(scope="session")
-def pg_version(pg_admin):
-    return pg_admin.info.server_version // 10000
+def pg_version():
+    conn = psycopg.connect(_pg_url("postgres"))
+    version = conn.info.server_version // 10000
+    conn.close()
+    return version
 
 
 def pytest_configure(config):

@@ -27,7 +27,15 @@ class InspectedExtension(Inspected):
         return f"alter extension {self.quoted_name} update to '{self.version}';"
 
     def alter_statements(self, other=None):
-        return [self.update_statement]
+        stmts = []
+        if other and self.schema != other.schema:
+            stmts.append(
+                f"alter extension {self.quoted_name} set schema {self.quoted_schema};"
+            )
+        stmt = self.update_statement
+        if stmt is not None:
+            stmts.append(stmt)
+        return stmts
 
     def __eq__(self, other):
         equalities = (

@@ -69,7 +69,9 @@ class InspectedSelectable(Inspected):
             self.parent_table == other.parent_table,
             self.partition_def == other.partition_def,
             self.rowsecurity == other.rowsecurity,
+            self.forcerowsecurity == other.forcerowsecurity,
             self.persistence == other.persistence,
+            self.owner == other.owner,
             self.ft_server_name == other.ft_server_name,
             self.ft_options == other.ft_options,
         )
@@ -258,6 +260,15 @@ class InspectedSelectable(Inspected):
         return self.alter_table_statement(self.alter_rls_clause)
 
     @property
+    def alter_force_rls_clause(self):
+        keyword = "force" if self.forcerowsecurity else "no force"
+        return f"{keyword} row level security"
+
+    @property
+    def alter_force_rls_statement(self):
+        return self.alter_table_statement(self.alter_force_rls_clause)
+
+    @property
     def alter_unlogged_statement(self):
         keyword = "unlogged" if self.is_unlogged else "logged"
         return self.alter_table_statement(f"set {keyword}")
@@ -329,6 +340,7 @@ class InspectedFunction(InspectedSelectable):
             self.signature == other.signature
             and self.result_string == other.result_string
             and self.definition == other.definition
+            and self.full_definition == other.full_definition
             and self.language == other.language
             and self.volatility == other.volatility
             and self.strictness == other.strictness

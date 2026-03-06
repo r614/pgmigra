@@ -14,6 +14,7 @@ class InspectedPublication(Inspected):
         publish_via_partition_root,
         owner,
         tables,
+        publish_generated_columns="none",
     ):
         self.name = name
         self.schema = ""
@@ -23,6 +24,7 @@ class InspectedPublication(Inspected):
         self.publish_delete = publish_delete
         self.publish_truncate = publish_truncate
         self.publish_via_partition_root = publish_via_partition_root
+        self.publish_generated_columns = publish_generated_columns
         self.owner = owner
         self.tables = list(tables) if tables else []
 
@@ -52,6 +54,10 @@ class InspectedPublication(Inspected):
             parts.append(f"publish = '{publish}'")
         if self.publish_via_partition_root:
             parts.append("publish_via_partition_root = true")
+        if self.publish_generated_columns != "none":
+            parts.append(
+                f"publish_generated_columns = '{self.publish_generated_columns}'"
+            )
         if parts:
             return " WITH (" + ", ".join(parts) + ")"
         return ""
@@ -75,6 +81,7 @@ class InspectedPublication(Inspected):
         if (
             self._publish_options != other._publish_options
             or self.publish_via_partition_root != other.publish_via_partition_root
+            or self.publish_generated_columns != other.publish_generated_columns
         ):
             parts = []
             publish = ", ".join(self._publish_options)
@@ -83,6 +90,10 @@ class InspectedPublication(Inspected):
                 parts.append("publish_via_partition_root = true")
             else:
                 parts.append("publish_via_partition_root = false")
+            if self.publish_generated_columns != other.publish_generated_columns:
+                parts.append(
+                    f"publish_generated_columns = '{self.publish_generated_columns}'"
+                )
             stmts.append(
                 f"ALTER PUBLICATION {self.quoted_full_name} SET ({', '.join(parts)});"
             )
@@ -96,6 +107,10 @@ class InspectedPublication(Inspected):
                     stmts.append(
                         f"ALTER PUBLICATION {self.quoted_full_name} DROP TABLE {t};"
                     )
+        if self.owner != other.owner:
+            stmts.append(
+                f"ALTER PUBLICATION {self.quoted_full_name} OWNER TO {quoted_identifier(self.owner)};"
+            )
         return stmts
 
     def __eq__(self, other):
@@ -107,5 +122,7 @@ class InspectedPublication(Inspected):
             and self.publish_delete == other.publish_delete
             and self.publish_truncate == other.publish_truncate
             and self.publish_via_partition_root == other.publish_via_partition_root
+            and self.publish_generated_columns == other.publish_generated_columns
+            and self.owner == other.owner
             and sorted(self.tables) == sorted(other.tables)
         )

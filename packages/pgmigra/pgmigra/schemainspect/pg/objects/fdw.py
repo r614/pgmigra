@@ -39,7 +39,10 @@ class InspectedFDW(Inspected):
             stmt += f" VALIDATOR {validator}"
         if self.options:
             stmt += f" OPTIONS ({self.options})"
-        return stmt + ";"
+        stmt += ";"
+        if self.owner:
+            stmt += f"\nALTER FOREIGN DATA WRAPPER {self.quoted_full_name} OWNER TO {quoted_identifier(self.owner)};"
+        return stmt
 
     @property
     def drop_statement(self):
@@ -48,6 +51,7 @@ class InspectedFDW(Inspected):
     def __eq__(self, other):
         return (
             self.name == other.name
+            and self.owner == other.owner
             and self.handler_name == other.handler_name
             and self.handler_schema == other.handler_schema
             and self.validator_name == other.validator_name

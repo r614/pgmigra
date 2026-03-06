@@ -6,6 +6,7 @@ select
   p.pubdelete as publish_delete,
   p.pubtruncate as publish_truncate,
   p.pubviaroot as publish_via_partition_root,
+  {publish_generated_columns_expr},
   pg_get_userbyid(p.pubowner) as owner,
   coalesce(
     (select array_agg(quote_ident(n.nspname) || '.' || quote_ident(c.relname) order by n.nspname, c.relname)
@@ -13,7 +14,7 @@ select
      join pg_class c on c.oid = pr.prrelid
      join pg_namespace n on n.oid = c.relnamespace
      where pr.prpubid = p.oid),
-    '{}'
+    '{{}}'
   ) as tables
 from pg_publication p
 order by p.pubname

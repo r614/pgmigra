@@ -20,7 +20,7 @@ class InspectedEnum(Inspected):
 
     @property
     def quoted_elements(self):
-        quoted = [f"'{e}'" for e in self.elements]
+        quoted = [f"'{e.replace(chr(39), chr(39)+chr(39))}'" for e in self.elements]
         return ", ".join(quoted)
 
     def alter_rename_statement(self, new_name):
@@ -45,10 +45,13 @@ class InspectedEnum(Inspected):
         previous = None
         for c in new:
             if c not in old:
+                escaped = c.replace("'", "''")
                 if not previous:
-                    s = f"alter type {self.quoted_full_name} add value '{c}' before '{old[0]}';"
+                    ref = old[0].replace("'", "''")
+                    s = f"alter type {self.quoted_full_name} add value '{escaped}' before '{ref}';"
                 else:
-                    s = f"alter type {self.quoted_full_name} add value '{c}' after '{previous}';"
+                    ref = previous.replace("'", "''")
+                    s = f"alter type {self.quoted_full_name} add value '{escaped}' after '{ref}';"
                 statements.append(s)
             previous = c
         return statements

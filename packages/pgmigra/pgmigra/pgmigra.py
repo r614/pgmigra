@@ -6,6 +6,7 @@ from typing import Any
 import psycopg
 
 from .changes import Changes
+from .data_diff import get_data_diff_statements
 from .db import execute
 from .schemainspect import get_inspector
 from .schemainspect.pg import PostgreSQL
@@ -133,6 +134,20 @@ class Migration:
                 new_stmts.append(s)
             new_stmts.safe = self.statements.safe
             self.statements = new_stmts
+
+        # Data diff: generate DML for tables annotated with pgmigra:data-diff
+        conn_from = getattr(self, "s_from", None)
+        conn_target = getattr(self, "s_target", None)
+        if conn_from is not None or conn_target is not None:
+            data_stmts = get_data_diff_statements(
+                conn_from=conn_from,
+                conn_target=conn_target,
+                inspector_from=self.changes.i_from,
+                inspector_target=self.changes.i_target,
+                safe=self.statements.safe,
+            )
+            if data_stmts:
+                self.add(data_stmts)
 
     @property
     def sql(self) -> str:
